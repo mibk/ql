@@ -1,4 +1,4 @@
-package dbr
+package ql
 
 import (
 	"github.com/stretchr/testify/assert"

@@ -1,4 +1,4 @@
-package dbr
+package ql
 
 import (
 	"database/sql/driver"

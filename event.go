@@ -1,4 +1,4 @@
-package dbr
+package ql
 
 // EventReceiver gets events from dbr methods for logging purposes
 type EventReceiver interface {
