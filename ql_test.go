@@ -36,7 +36,7 @@ func realDb() *sql.DB {
 
 	dsn := os.Getenv("DBR_TEST_DSN")
 	if dsn == "" {
-		dsn = "root:unprotected@unix(/tmp/mysql.sock)/uservoice_development?charset=utf8&parseTime=true"
+		dsn = "root@/ql_dev?charset=utf8&parseTime=true"
 	}
 
 	db, err := sql.Open(driver, dsn)
