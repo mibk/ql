@@ -1,7 +1,6 @@
 package ql
 
 import (
-	// "fmt"
 	"bytes"
 	"database/sql/driver"
 	"reflect"
@@ -17,51 +16,43 @@ func escapeAndQuoteString(val string) string {
 	buf := bytes.Buffer{}
 
 	buf.WriteRune('\'')
-
 	for _, char := range val {
-		if char == '\'' { // single quote: ' -> \'
-			buf.WriteString("\\'")
-		} else if char == '"' { // double quote: " -> \"
-			buf.WriteString("\\\"")
-		} else if char == '\\' { // slash: \ -> "\\"
-			buf.WriteString("\\\\")
-		} else if char == '\n' { // control: newline: \n -> "\n"
-			buf.WriteString("\\n")
-		} else if char == '\r' { // control: return: \r -> "\r"
-			buf.WriteString("\\r")
-		} else if char == 0 { // control: NUL: 0 -> "\x00"
-			buf.WriteString("\\x00")
-		} else if char == 0x1a { // control: \x1a -> "\x1a"
-			buf.WriteString("\\x1a")
-		} else {
+		switch char {
+		case '\'':
+			buf.WriteString(`\'`)
+		case '"':
+			buf.WriteString(`\"`)
+		case '\\':
+			buf.WriteString(`\\`)
+		case '\n':
+			buf.WriteString(`\n`)
+		case '\r':
+			buf.WriteString(`\r`)
+		case 0:
+			buf.WriteString(`\x00`)
+		case 0x1a:
+			buf.WriteString(`\x1a`)
+		default:
 			buf.WriteRune(char)
 		}
 	}
-
 	buf.WriteRune('\'')
 
 	return buf.String()
 }
 
 func isUint(k reflect.Kind) bool {
-	return (k == reflect.Uint) ||
-		(k == reflect.Uint8) ||
-		(k == reflect.Uint16) ||
-		(k == reflect.Uint32) ||
-		(k == reflect.Uint64)
+	return k == reflect.Uint || k == reflect.Uint8 || k == reflect.Uint16 || k == reflect.Uint32 ||
+		k == reflect.Uint64
 }
 
 func isInt(k reflect.Kind) bool {
-	return (k == reflect.Int) ||
-		(k == reflect.Int8) ||
-		(k == reflect.Int16) ||
-		(k == reflect.Int32) ||
-		(k == reflect.Int64)
+	return k == reflect.Int || k == reflect.Int8 || k == reflect.Int16 || k == reflect.Int32 ||
+		k == reflect.Int64
 }
 
 func isFloat(k reflect.Kind) bool {
-	return (k == reflect.Float32) ||
-		(k == reflect.Float64)
+	return k == reflect.Float32 || k == reflect.Float64
 }
 
 // sql is like "id = ? OR username = ?"

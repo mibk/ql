@@ -2,8 +2,9 @@ package ql
 
 import (
 	"database/sql/driver"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestInterpolateNil(t *testing.T) {
