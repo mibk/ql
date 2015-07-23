@@ -104,14 +104,6 @@ func (b *SelectBuilder) Offset(offset uint64) *SelectBuilder {
 	return b
 }
 
-// Paginate sets LIMIT/OFFSET for the statement based on the given page/perPage.
-// It assumes page/perPage are valid. Page and perPage must be >= 1.
-func (b *SelectBuilder) Paginate(page, perPage uint64) *SelectBuilder {
-	b.Limit(perPage)
-	b.Offset((page - 1) * perPage)
-	return b
-}
-
 // ToSql serialized the SelectBuilder to a SQL string. It returns the string with
 // placeholders and a slice of query arguments.
 func (b *SelectBuilder) ToSql() (string, []interface{}) {

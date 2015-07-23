@@ -19,7 +19,7 @@ func BenchmarkSelectBasicSql(b *testing.B) {
 			Where("d = ? OR e = ?", 1, "wat").
 			Where(argEq).
 			OrderDir("id", false).
-			Paginate(1, 20).
+			Limit(20).Offset(0).
 			ToSql()
 	}
 }
@@ -92,7 +92,7 @@ func TestSelectPaginateOrderDirToSql(t *testing.T) {
 	sql, args := s.Select("a", "b").
 		From("c").
 		Where("d = ?", 1).
-		Paginate(1, 20).
+		Limit(20).Offset(0).
 		OrderDir("id", false).
 		ToSql()
 
@@ -102,7 +102,7 @@ func TestSelectPaginateOrderDirToSql(t *testing.T) {
 	sql, args = s.Select("a", "b").
 		From("c").
 		Where("d = ?", 1).
-		Paginate(3, 30).
+		Limit(30).Offset(60).
 		OrderDir("id", true).
 		ToSql()
 
