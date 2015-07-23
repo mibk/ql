@@ -3,9 +3,7 @@ package ql
 import (
 	"bytes"
 	"database/sql"
-	"fmt"
 	"reflect"
-	"time"
 )
 
 // InsertBuilder contains the clauses for an INSERT statement
@@ -141,36 +139,5 @@ func (b *InsertBuilder) ToSql() (string, []interface{}) {
 // Exec executes the statement represented by the InsertBuilder
 // It returns the raw database/sql Result and an error if there was one
 func (b *InsertBuilder) Exec() (sql.Result, error) {
-	sql, args := b.ToSql()
-
-	fullSql, err := Interpolate(sql, args)
-	if err != nil {
-		return nil, b.EventErrKv("dbr.insert.exec.interpolate", err, kvs{"sql": sql, "args": fmt.Sprint(args)})
-	}
-
-	// Start the timer:
-	startTime := time.Now()
-	defer func() { b.TimingKv("dbr.insert", time.Since(startTime).Nanoseconds(), kvs{"sql": fullSql}) }()
-
-	result, err := b.runner.Exec(fullSql)
-	if err != nil {
-		return result, b.EventErrKv("dbr.insert.exec.exec", err, kvs{"sql": fullSql})
-	}
-
-	// If the structure has an "Id" field which is an int64, set it from the LastInsertId(). Otherwise, don't bother.
-	if len(b.Recs) == 1 {
-		rec := b.Recs[0]
-		val := reflect.Indirect(reflect.ValueOf(rec))
-		if val.Kind() == reflect.Struct && val.CanSet() {
-			if idField := val.FieldByName("Id"); idField.IsValid() && idField.Kind() == reflect.Int64 {
-				if lastID, err := result.LastInsertId(); err == nil {
-					idField.Set(reflect.ValueOf(lastID))
-				} else {
-					b.EventErrKv("dbr.insert.exec.last_inserted_id", err, kvs{"sql": fullSql})
-				}
-			}
-		}
-	}
-
-	return result, nil
+	return exec(b.runner, b, b, "insert")
 }

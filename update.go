@@ -4,16 +4,12 @@ import (
 	"bytes"
 	"database/sql"
 	"fmt"
-	"time"
 )
 
 // UpdateBuilder contains the clauses for an UPDATE statement
 type UpdateBuilder struct {
 	*Connection
 	runner
-
-	RawFullSql   string
-	RawArguments []interface{}
 
 	Table          string
 	SetClauses     []*setClause
@@ -39,32 +35,12 @@ func (db *Connection) Update(table string) *UpdateBuilder {
 	}
 }
 
-// UpdateBySql creates a new UpdateBuilder for the given SQL string and arguments
-func (db *Connection) UpdateBySql(sql string, args ...interface{}) *UpdateBuilder {
-	return &UpdateBuilder{
-		Connection:   db,
-		runner:       db.Db,
-		RawFullSql:   sql,
-		RawArguments: args,
-	}
-}
-
 // Update creates a new UpdateBuilder for the given table bound to a transaction
 func (tx *Tx) Update(table string) *UpdateBuilder {
 	return &UpdateBuilder{
 		Connection: tx.Connection,
 		runner:     tx.Tx,
 		Table:      table,
-	}
-}
-
-// UpdateBySql creates a new UpdateBuilder for the given SQL string and arguments bound to a transaction
-func (tx *Tx) UpdateBySql(sql string, args ...interface{}) *UpdateBuilder {
-	return &UpdateBuilder{
-		Connection:   tx.Connection,
-		runner:       tx.Tx,
-		RawFullSql:   sql,
-		RawArguments: args,
 	}
 }
 
@@ -121,10 +97,6 @@ func (b *UpdateBuilder) Offset(offset uint64) *UpdateBuilder {
 // ToSql serialized the UpdateBuilder to a SQL string
 // It returns the string with placeholders and a slice of query arguments
 func (b *UpdateBuilder) ToSql() (string, []interface{}) {
-	if b.RawFullSql != "" {
-		return b.RawFullSql, b.RawArguments
-	}
-
 	if len(b.Table) == 0 {
 		panic("no table specified")
 	}
@@ -188,21 +160,5 @@ func (b *UpdateBuilder) ToSql() (string, []interface{}) {
 // Exec executes the statement represented by the UpdateBuilder
 // It returns the raw database/sql Result and an error if there was one
 func (b *UpdateBuilder) Exec() (sql.Result, error) {
-	sql, args := b.ToSql()
-
-	fullSql, err := Interpolate(sql, args)
-	if err != nil {
-		return nil, b.EventErrKv("dbr.update.exec.interpolate", err, kvs{"sql": fullSql})
-	}
-
-	// Start the timer:
-	startTime := time.Now()
-	defer func() { b.TimingKv("dbr.update", time.Since(startTime).Nanoseconds(), kvs{"sql": fullSql}) }()
-
-	result, err := b.runner.Exec(fullSql)
-	if err != nil {
-		return result, b.EventErrKv("dbr.update.exec.exec", err, kvs{"sql": fullSql})
-	}
-
-	return result, nil
+	return exec(b.runner, b, b, "update")
 }

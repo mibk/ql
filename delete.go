@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"database/sql"
 	"fmt"
-	"time"
 )
 
 // DeleteBuilder contains the clauses for a DELETE statement
@@ -123,21 +122,5 @@ func (b *DeleteBuilder) ToSql() (string, []interface{}) {
 // Exec executes the statement represented by the DeleteBuilder
 // It returns the raw database/sql Result and an error if there was one
 func (b *DeleteBuilder) Exec() (sql.Result, error) {
-	sql, args := b.ToSql()
-
-	fullSql, err := Interpolate(sql, args)
-	if err != nil {
-		return nil, b.EventErrKv("dbr.delete.exec.interpolate", err, kvs{"sql": fullSql})
-	}
-
-	// Start the timer:
-	startTime := time.Now()
-	defer func() { b.TimingKv("dbr.delete", time.Since(startTime).Nanoseconds(), kvs{"sql": fullSql}) }()
-
-	result, err := b.runner.Exec(fullSql)
-	if err != nil {
-		return result, b.EventErrKv("dbr.delete.exec.exec", err, kvs{"sql": fullSql})
-	}
-
-	return result, nil
+	return exec(b.runner, b, b, "delete")
 }

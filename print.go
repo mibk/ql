@@ -12,6 +12,10 @@ func makeSql(b sqlBuilder) string {
 	return sql
 }
 
+func (q *Query) String() string {
+	return makeSql(q)
+}
+
 func (b *DeleteBuilder) String() string {
 	return makeSql(b)
 }
