@@ -25,41 +25,41 @@ package ql
 // ReturnInt64 executes the SelectBuilder and returns the value as an int64.
 func (l loader) ReturnInt64() (int64, error) {
 	var v int64
-	err := l.LoadValue(&v)
+	err := l.loadValue(&v)
 	return v, err
 }
 
 // ReturnInt64s executes the SelectBuilder and returns the value as a slice of int64s.
 func (l loader) ReturnInt64s() ([]int64, error) {
 	var v []int64
-	_, err := l.LoadValues(&v)
+	_, err := l.Load(&v)
 	return v, err
 }
 
 // ReturnUint64 executes the SelectBuilder and returns the value as an uint64.
 func (l loader) ReturnUint64() (uint64, error) {
 	var v uint64
-	err := l.LoadValue(&v)
+	err := l.loadValue(&v)
 	return v, err
 }
 
 // ReturnUint64s executes the SelectBuilder and returns the value as a slice of uint64s.
 func (l loader) ReturnUint64s() ([]uint64, error) {
 	var v []uint64
-	_, err := l.LoadValues(&v)
+	_, err := l.Load(&v)
 	return v, err
 }
 
 // ReturnString executes the SelectBuilder and returns the value as a string.
 func (l loader) ReturnString() (string, error) {
 	var v string
-	err := l.LoadValue(&v)
+	err := l.loadValue(&v)
 	return v, err
 }
 
 // ReturnStrings executes the SelectBuilder and returns the value as a slice of strings.
 func (l loader) ReturnStrings() ([]string, error) {
 	var v []string
-	_, err := l.LoadValues(&v)
+	_, err := l.Load(&v)
 	return v, err
 }

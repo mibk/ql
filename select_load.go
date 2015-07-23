@@ -18,44 +18,54 @@ type loader struct {
 	builder sqlBuilder
 }
 
-// LoadStructs executes the SelectBuilder and loads the resulting data into a slice of structs,
-// dest must be a pointer to a slice of pointers to structs.  It returns the number of items
-// found (which is not necessarily the # of items set).
-func (l loader) LoadStructs(dest interface{}) (int, error) {
-	//
-	// Validate the dest, and extract the reflection values we need.
-	//
-
-	// This must be a pointer to a slice
-	valueOfDest := reflect.ValueOf(dest)
-	kindOfDest := valueOfDest.Kind()
-
-	if kindOfDest != reflect.Ptr {
-		panic("invalid type passed to LoadStructs. Need a pointer to a slice")
+// Load executes the query and loads the resulting data into the dest, which can be either
+// a single value, or a slice of values. Value can be either a struct, or a simple type.
+// If dest is only a single value, ErrNotFound would be return as an error if none is found.
+// Otherwise, Load returns number of items found (which is not necessarily the number of items
+// set).
+func (l loader) Load(dest interface{}) (n int, err error) {
+	valOfDest := reflect.ValueOf(dest)
+	if valOfDest.Kind() != reflect.Ptr {
+		panic("dest must be a pointer")
 	}
 
-	// This must a slice
-	valueOfDest = reflect.Indirect(valueOfDest)
-	kindOfDest = valueOfDest.Kind()
+	valOfIndirect := reflect.Indirect(valOfDest)
+	switch valOfIndirect.Kind() {
+	case reflect.Slice:
+		originType := valOfIndirect.Type().Elem()
+		elemType := originType
 
-	if kindOfDest != reflect.Slice {
-		panic("invalid type passed to LoadStructs. Need a pointer to a slice")
+		canBeStruct := true
+		if originType.Kind() != reflect.Ptr {
+			canBeStruct = false
+		} else {
+			elemType = originType.Elem()
+		}
+
+		switch elemType.Kind() {
+		case reflect.Struct:
+			if !canBeStruct {
+				panic("elements of the dest slice must be pointers to structs")
+			}
+			return l.loadStructs(dest, valOfIndirect, elemType)
+		default:
+			return l.loadValues(dest, valOfIndirect, originType)
+		}
+	case reflect.Struct:
+		err = l.loadStruct(dest, valOfIndirect)
+	default:
+		err = l.loadValue(dest)
 	}
-
-	// The slice elements must be pointers to structures
-	recordType := valueOfDest.Type().Elem()
-	if recordType.Kind() != reflect.Ptr {
-		panic("Elements need to be pointers to structures")
+	if err == nil {
+		n = 1
 	}
+	return n, err
+}
 
-	recordType = recordType.Elem()
-	if recordType.Kind() != reflect.Struct {
-		panic("Elements need to be pointers to structures")
-	}
-
-	//
-	// Get full SQL
-	//
+// loadStructs executes the query and loads the resulting data into a slice of structs,
+// dest must be a pointer to a slice of pointers to structs. It returns the number of items
+// found (which is not necessarily the number of items set).
+func (l loader) loadStructs(dest interface{}, valueOfDest reflect.Value, elemType reflect.Type) (int, error) {
 	fullSql, err := Interpolate(l.builder.ToSql())
 	if err != nil {
 		return 0, l.EventErr("dbr.select.load_all.interpolate", err)
@@ -63,25 +73,21 @@ func (l loader) LoadStructs(dest interface{}) (int, error) {
 
 	numberOfRowsReturned := 0
 
-	// Start the timer:
 	startTime := time.Now()
 	defer func() { l.TimingKv("dbr.select", time.Since(startTime).Nanoseconds(), kvs{"sql": fullSql}) }()
 
-	// Run the query:
 	rows, err := l.runner.Query(fullSql)
 	if err != nil {
 		return 0, l.EventErrKv("dbr.select.load_all.query", err, kvs{"sql": fullSql})
 	}
 	defer rows.Close()
 
-	// Get the columns returned
 	columns, err := rows.Columns()
 	if err != nil {
 		return numberOfRowsReturned, l.EventErrKv("dbr.select.load_one.rows.Columns", err, kvs{"sql": fullSql})
 	}
 
-	// Create a map of this result set to the struct fields
-	fieldMap, err := l.calculateFieldMap(recordType, columns, false)
+	fieldMap, err := l.calculateFieldMap(elemType, columns, false)
 	if err != nil {
 		return numberOfRowsReturned, l.EventErrKv("dbr.select.load_all.calculateFieldMap", err, kvs{"sql": fullSql})
 	}
@@ -93,7 +99,7 @@ func (l loader) LoadStructs(dest interface{}) (int, error) {
 	sliceValue := valueOfDest
 	for rows.Next() {
 		// Create a new record to store our row:
-		pointerToNewRecord := reflect.New(recordType)
+		pointerToNewRecord := reflect.New(elemType)
 		newRecord := reflect.Indirect(pointerToNewRecord)
 
 		// Prepare the holder for this record
@@ -123,49 +129,31 @@ func (l loader) LoadStructs(dest interface{}) (int, error) {
 	return numberOfRowsReturned, nil
 }
 
-// LoadStruct executes the SelectBuilder and loads the resulting data into a struct,
+// loadStruct executes the query and loads the resulting data into a struct,
 // dest must be a pointer to a struct. Returns ErrNotFound if nothing was found.
-func (l loader) LoadStruct(dest interface{}) error {
-	//
-	// Validate the dest, and extract the reflection values we need.
-	//
-	valueOfDest := reflect.ValueOf(dest)
-	indirectOfDest := reflect.Indirect(valueOfDest)
-	kindOfDest := valueOfDest.Kind()
-
-	if kindOfDest != reflect.Ptr || indirectOfDest.Kind() != reflect.Struct {
-		panic("you need to pass in the address of a struct")
-	}
-
-	recordType := indirectOfDest.Type()
-
-	//
-	// Get full SQL
-	//
+func (l loader) loadStruct(dest interface{}, valueOfDest reflect.Value) error {
 	fullSql, err := Interpolate(l.builder.ToSql())
 	if err != nil {
 		return err
 	}
 
-	// Start the timer:
 	startTime := time.Now()
-	defer func() { l.TimingKv("dbr.select", time.Since(startTime).Nanoseconds(), kvs{"sql": fullSql}) }()
+	defer func() {
+		l.TimingKv("dbr.select", time.Since(startTime).Nanoseconds(), kvs{"sql": fullSql})
+	}()
 
-	// Run the query:
 	rows, err := l.runner.Query(fullSql)
 	if err != nil {
 		return l.EventErrKv("dbr.select.load_one.query", err, kvs{"sql": fullSql})
 	}
 	defer rows.Close()
 
-	// Get the columns of this result set
 	columns, err := rows.Columns()
 	if err != nil {
 		return l.EventErrKv("dbr.select.load_one.rows.Columns", err, kvs{"sql": fullSql})
 	}
 
-	// Create a map of this result set to the struct columns
-	fieldMap, err := l.calculateFieldMap(recordType, columns, false)
+	fieldMap, err := l.calculateFieldMap(valueOfDest.Type(), columns, false)
 	if err != nil {
 		return l.EventErrKv("dbr.select.load_one.calculateFieldMap", err, kvs{"sql": fullSql})
 	}
@@ -175,7 +163,7 @@ func (l loader) LoadStruct(dest interface{}) error {
 
 	if rows.Next() {
 		// Build a 'holder', which is an []interface{}. Each value will be the address of the field corresponding to our newly made record:
-		scannable, err := l.prepareHolderFor(indirectOfDest, fieldMap, holder)
+		scannable, err := l.prepareHolderFor(valueOfDest, fieldMap, holder)
 		if err != nil {
 			return l.EventErrKv("dbr.select.load_one.holderFor", err, kvs{"sql": fullSql})
 		}
@@ -195,37 +183,9 @@ func (l loader) LoadStruct(dest interface{}) error {
 	return ErrNotFound
 }
 
-// LoadValues executes the SelectBuilder and loads the resulting data into a slice of
+// loadValues executes the query and loads the resulting data into a slice of
 // primitive values. Returns ErrNotFound if no value was found, and it was therefore not set.
-func (l loader) LoadValues(dest interface{}) (int, error) {
-	// Validate the dest and reflection values we need
-
-	// This must be a pointer to a slice
-	valueOfDest := reflect.ValueOf(dest)
-	kindOfDest := valueOfDest.Kind()
-
-	if kindOfDest != reflect.Ptr {
-		panic("invalid type passed to LoadValues. Need a pointer to a slice")
-	}
-
-	// This must a slice
-	valueOfDest = reflect.Indirect(valueOfDest)
-	kindOfDest = valueOfDest.Kind()
-
-	if kindOfDest != reflect.Slice {
-		panic("invalid type passed to LoadValues. Need a pointer to a slice")
-	}
-
-	recordType := valueOfDest.Type().Elem()
-
-	recordTypeIsPtr := recordType.Kind() == reflect.Ptr
-	if recordTypeIsPtr {
-		reflect.ValueOf(dest)
-	}
-
-	//
-	// Get full SQL
-	//
+func (l loader) loadValues(dest interface{}, valueOfDest reflect.Value, elemType reflect.Type) (int, error) {
 	fullSql, err := Interpolate(l.builder.ToSql())
 	if err != nil {
 		return 0, err
@@ -233,11 +193,9 @@ func (l loader) LoadValues(dest interface{}) (int, error) {
 
 	numberOfRowsReturned := 0
 
-	// Start the timer:
 	startTime := time.Now()
 	defer func() { l.TimingKv("dbr.select", time.Since(startTime).Nanoseconds(), kvs{"sql": fullSql}) }()
 
-	// Run the query:
 	rows, err := l.runner.Query(fullSql)
 	if err != nil {
 		return numberOfRowsReturned, l.EventErrKv("dbr.select.load_all_values.query", err, kvs{"sql": fullSql})
@@ -247,7 +205,7 @@ func (l loader) LoadValues(dest interface{}) (int, error) {
 	sliceValue := valueOfDest
 	for rows.Next() {
 		// Create a new value to store our row:
-		pointerToNewValue := reflect.New(recordType)
+		pointerToNewValue := reflect.New(elemType)
 		newValue := reflect.Indirect(pointerToNewValue)
 
 		err = rows.Scan(pointerToNewValue.Interface())
@@ -269,28 +227,18 @@ func (l loader) LoadValues(dest interface{}) (int, error) {
 	return numberOfRowsReturned, nil
 }
 
-// LoadValue executes the SelectBuilder and loads the resulting data into a primitive value.
+// loadValue executes the query and loads the resulting data into a primitive value.
 // Returns ErrNotFound if no value was found, and it was therefore not set.
-func (l loader) LoadValue(dest interface{}) error {
-	// Validate the dest
-	valueOfDest := reflect.ValueOf(dest)
-	kindOfDest := valueOfDest.Kind()
-
-	if kindOfDest != reflect.Ptr {
-		panic("Destination must be a pointer")
-	}
-
-	//
-	// Get full SQL
-	//
+func (l loader) loadValue(dest interface{}) error {
 	fullSql, err := Interpolate(l.builder.ToSql())
 	if err != nil {
 		return err
 	}
 
-	// Start the timer:
 	startTime := time.Now()
-	defer func() { l.TimingKv("dbr.select", time.Since(startTime).Nanoseconds(), kvs{"sql": fullSql}) }()
+	defer func() {
+		l.TimingKv("dbr.select", time.Since(startTime).Nanoseconds(), kvs{"sql": fullSql})
+	}()
 
 	// Run the query:
 	rows, err := l.runner.Query(fullSql)
