@@ -5,7 +5,7 @@ import (
 	"reflect"
 )
 
-// Eq is a map column -> value pairs which must be matched in a query
+// Eq is a map column -> value pairs which must be matched in a query.
 type Eq map[string]interface{}
 
 type whereFragment struct {
@@ -29,7 +29,7 @@ func newWhereFragment(whereSqlOrMap interface{}, args []interface{}) *whereFragm
 	return nil
 }
 
-// Invariant: only called when len(fragments) > 0
+// Invariant: only called when len(fragments) > 0.
 func writeWhereFragmentsToSql(fragments []*whereFragment, sql *bytes.Buffer, args *[]interface{}) {
 	anyConditions := false
 	for _, f := range fragments {

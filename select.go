@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-// SelectBuilder contains the clauses for a SELECT statement
+// SelectBuilder contains the clauses for a SELECT statement.
 type SelectBuilder struct {
 	// methods for loading structs and values
 	loader
@@ -23,7 +23,7 @@ type SelectBuilder struct {
 	OffsetValid     bool
 }
 
-// Select creates a new SelectBuilder that select that given columns
+// Select creates a new SelectBuilder that select that given columns.
 func (db *Connection) Select(cols ...string) *SelectBuilder {
 	b := &SelectBuilder{
 		loader:  loader{Connection: db, runner: db.Db},
@@ -33,7 +33,7 @@ func (db *Connection) Select(cols ...string) *SelectBuilder {
 	return b
 }
 
-// Select creates a new SelectBuilder that select that given columns bound to the transaction
+// Select creates a new SelectBuilder that select that given columns bound to the transaction.
 func (tx *Tx) Select(cols ...string) *SelectBuilder {
 	b := &SelectBuilder{
 		loader:  loader{Connection: tx.Connection, runner: tx.Tx},
@@ -43,44 +43,44 @@ func (tx *Tx) Select(cols ...string) *SelectBuilder {
 	return b
 }
 
-// Distinct marks the statement as a DISTINCT SELECT
+// Distinct marks the statement as a DISTINCT SELECT.
 func (b *SelectBuilder) Distinct() *SelectBuilder {
 	b.IsDistinct = true
 	return b
 }
 
-// From sets the table to SELECT FROM
+// From sets the table to SELECT FROM.
 func (b *SelectBuilder) From(from string) *SelectBuilder {
 	b.FromTable = from
 	return b
 }
 
-// Where appends a WHERE clause to the statement for the given string and args
-// or map of column/value pairs
+// Where appends a WHERE clause to the statement for the given string and args or map
+// of column/value pairs.
 func (b *SelectBuilder) Where(whereSqlOrMap interface{}, args ...interface{}) *SelectBuilder {
 	b.WhereFragments = append(b.WhereFragments, newWhereFragment(whereSqlOrMap, args))
 	return b
 }
 
-// GroupBy appends a column to group the statement
+// GroupBy appends a column to group the statement.
 func (b *SelectBuilder) GroupBy(group string) *SelectBuilder {
 	b.GroupBys = append(b.GroupBys, group)
 	return b
 }
 
-// Having appends a HAVING clause to the statement
+// Having appends a HAVING clause to the statement.
 func (b *SelectBuilder) Having(whereSqlOrMap interface{}, args ...interface{}) *SelectBuilder {
 	b.HavingFragments = append(b.HavingFragments, newWhereFragment(whereSqlOrMap, args))
 	return b
 }
 
-// OrderBy appends a column to ORDER the statement by
+// OrderBy appends a column to ORDER the statement by.
 func (b *SelectBuilder) OrderBy(ord string) *SelectBuilder {
 	b.OrderBys = append(b.OrderBys, ord)
 	return b
 }
 
-// OrderDir appends a column to ORDER the statement by with a given direction
+// OrderDir appends a column to ORDER the statement by with a given direction.
 func (b *SelectBuilder) OrderDir(ord string, isAsc bool) *SelectBuilder {
 	if isAsc {
 		b.OrderBys = append(b.OrderBys, ord+" ASC")
@@ -90,30 +90,30 @@ func (b *SelectBuilder) OrderDir(ord string, isAsc bool) *SelectBuilder {
 	return b
 }
 
-// Limit sets a limit for the statement; overrides any existing LIMIT
+// Limit sets a limit for the statement; overrides any existing LIMIT.
 func (b *SelectBuilder) Limit(limit uint64) *SelectBuilder {
 	b.LimitCount = limit
 	b.LimitValid = true
 	return b
 }
 
-// Offset sets an offset for the statement; overrides any existing OFFSET
+// Offset sets an offset for the statement; overrides any existing OFFSET.
 func (b *SelectBuilder) Offset(offset uint64) *SelectBuilder {
 	b.OffsetCount = offset
 	b.OffsetValid = true
 	return b
 }
 
-// Paginate sets LIMIT/OFFSET for the statement based on the given page/perPage
-// Assumes page/perPage are valid. Page and perPage must be >= 1
+// Paginate sets LIMIT/OFFSET for the statement based on the given page/perPage.
+// It assumes page/perPage are valid. Page and perPage must be >= 1.
 func (b *SelectBuilder) Paginate(page, perPage uint64) *SelectBuilder {
 	b.Limit(perPage)
 	b.Offset((page - 1) * perPage)
 	return b
 }
 
-// ToSql serialized the SelectBuilder to a SQL string
-// It returns the string with placeholders and a slice of query arguments
+// ToSql serialized the SelectBuilder to a SQL string. It returns the string with
+// placeholders and a slice of query arguments.
 func (b *SelectBuilder) ToSql() (string, []interface{}) {
 	if len(b.Columns) == 0 {
 		panic("no columns specified")

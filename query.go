@@ -10,7 +10,7 @@ type Query struct {
 	args   []interface{}
 }
 
-// Query creates Query by the raw SQL query and args
+// Query creates Query by the raw SQL query and args.
 func (db *Connection) Query(sql string, args ...interface{}) *Query {
 	q := &Query{
 		loader: loader{Connection: db, runner: db.Db},
@@ -21,12 +21,12 @@ func (db *Connection) Query(sql string, args ...interface{}) *Query {
 	return q
 }
 
-// ToSql returns the raw SQL query and args
+// ToSql returns the raw SQL query and args.
 func (q *Query) ToSql() (string, []interface{}) {
 	return q.rawSql, q.args
 }
 
-// Exec executes the query
+// Exec executes the query.
 func (q *Query) Exec() (sql.Result, error) {
 	return exec(q.runner, q, q, "query")
 }

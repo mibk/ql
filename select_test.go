@@ -334,4 +334,4 @@ func TestSelectReturn(t *testing.T) {
 	assert.Equal(t, counts, []int64{2})
 }
 
-// Series of tests that test mapping struct fields to columns
+// Series of tests that test mapping struct fields to columns.

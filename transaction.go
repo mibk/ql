@@ -4,13 +4,13 @@ import (
 	"database/sql"
 )
 
-// Tx is a transaction for the given Session
+// Tx is a transaction for the given Session.
 type Tx struct {
 	*Connection
 	*sql.Tx
 }
 
-// Begin creates a transaction for the given connection
+// Begin creates a transaction for the given connection.
 func (db *Connection) Begin() (*Tx, error) {
 	tx, err := db.Db.Begin()
 	if err != nil {
@@ -25,7 +25,7 @@ func (db *Connection) Begin() (*Tx, error) {
 	}, nil
 }
 
-// Commit finishes the transaction
+// Commit finishes the transaction.
 func (tx *Tx) Commit() error {
 	err := tx.Tx.Commit()
 	if err != nil {
@@ -36,7 +36,7 @@ func (tx *Tx) Commit() error {
 	return nil
 }
 
-// Rollback cancels the transaction
+// Rollback cancels the transaction.
 func (tx *Tx) Rollback() error {
 	err := tx.Tx.Rollback()
 	if err != nil {
@@ -47,9 +47,10 @@ func (tx *Tx) Rollback() error {
 	return nil
 }
 
-// RollbackUnlessCommitted rollsback the transaction unless it has already been committed or rolled back.
-// Useful to defer tx.RollbackUnlessCommitted() -- so you don't have to handle N failure cases
-// Keep in mind the only way to detect an error on the rollback is via the event log.
+// RollbackUnlessCommitted rollsback the transaction unless it has already been committed
+// or rolled back. Useful to defer tx.RollbackUnlessCommitted() -- so you don't have to handle
+// N failure cases. Keep in mind the only way to detect an error on the rollback is via
+// the event log.
 func (tx *Tx) RollbackUnlessCommitted() {
 	err := tx.Tx.Rollback()
 	if err == sql.ErrTxDone {

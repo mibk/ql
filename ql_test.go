@@ -7,11 +7,9 @@ import (
 	"os"
 )
 
-//
 // Test helpers
-//
 
-// Returns a dbion that's not backed by a database
+// Returns a dbion that's not backed by a database.
 func createFakeConnection() *Connection {
 	return NewConnection(nil, nil)
 }

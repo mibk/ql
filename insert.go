@@ -6,7 +6,7 @@ import (
 	"reflect"
 )
 
-// InsertBuilder contains the clauses for an INSERT statement
+// InsertBuilder contains the clauses for an INSERT statement.
 type InsertBuilder struct {
 	*Connection
 	runner
@@ -17,7 +17,7 @@ type InsertBuilder struct {
 	Recs []interface{}
 }
 
-// InsertInto instantiates a InsertBuilder for the given table
+// InsertInto instantiates a InsertBuilder for the given table.
 func (db *Connection) InsertInto(into string) *InsertBuilder {
 	return &InsertBuilder{
 		Connection: db,
@@ -26,7 +26,7 @@ func (db *Connection) InsertInto(into string) *InsertBuilder {
 	}
 }
 
-// InsertInto instantiates a InsertBuilder for the given table bound to a transaction
+// InsertInto instantiates a InsertBuilder for the given table bound to a transaction.
 func (tx *Tx) InsertInto(into string) *InsertBuilder {
 	return &InsertBuilder{
 		Connection: tx.Connection,
@@ -35,25 +35,25 @@ func (tx *Tx) InsertInto(into string) *InsertBuilder {
 	}
 }
 
-// Columns appends columns to insert in the statement
+// Columns appends columns to insert in the statement.
 func (b *InsertBuilder) Columns(columns ...string) *InsertBuilder {
 	b.Cols = columns
 	return b
 }
 
-// Values appends a set of values to the statement
+// Values appends a set of values to the statement.
 func (b *InsertBuilder) Values(vals ...interface{}) *InsertBuilder {
 	b.Vals = append(b.Vals, vals)
 	return b
 }
 
-// Record pulls in values to match Columns from the record
+// Record pulls in values to match Columns from the record.
 func (b *InsertBuilder) Record(record interface{}) *InsertBuilder {
 	b.Recs = append(b.Recs, record)
 	return b
 }
 
-// Pair adds a key/value pair to the statement
+// Pair adds a key/value pair to the statement.
 func (b *InsertBuilder) Pair(column string, value interface{}) *InsertBuilder {
 	b.Cols = append(b.Cols, column)
 	lenVals := len(b.Vals)
@@ -68,8 +68,8 @@ func (b *InsertBuilder) Pair(column string, value interface{}) *InsertBuilder {
 	return b
 }
 
-// ToSql serialized the InsertBuilder to a SQL string
-// It returns the string with placeholders and a slice of query arguments
+// ToSql serialized the InsertBuilder to a SQL string.  It returns the string with
+// placeholders and a slice of query arguments.
 func (b *InsertBuilder) ToSql() (string, []interface{}) {
 	if len(b.Into) == 0 {
 		panic("no table specified")
@@ -136,8 +136,8 @@ func (b *InsertBuilder) ToSql() (string, []interface{}) {
 	return sql.String(), args
 }
 
-// Exec executes the statement represented by the InsertBuilder
-// It returns the raw database/sql Result and an error if there was one
+// Exec executes the statement represented by the InsertBuilder. It returns the raw
+// database/sql Result and an error if there was one.
 func (b *InsertBuilder) Exec() (sql.Result, error) {
 	return exec(b.runner, b, b, "insert")
 }

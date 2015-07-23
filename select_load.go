@@ -8,8 +8,8 @@ import (
 // Unvetted thots:
 // Given a query and given a structure (field list), there's 2 sets of fields.
 // Take the intersection. We can fill those in. great.
-// For fields in the structure that aren't in the query, we'll let that slide if db:"-"
-// For fields in the structure that aren't in the query but without db:"-", return error
+// For fields in the structure that aren't in the query, we'll let that slide if db:"-".
+// For fields in the structure that aren't in the query but without db:"-", return error.
 // For fields in the query that aren't in the structure, we'll ignore them.
 
 type loader struct {
@@ -18,9 +18,9 @@ type loader struct {
 	builder sqlBuilder
 }
 
-// LoadStructs executes the SelectBuilder and loads the resulting data into a slice of structs
-// dest must be a pointer to a slice of pointers to structs
-// Returns the number of items found (which is not necessarily the # of items set)
+// LoadStructs executes the SelectBuilder and loads the resulting data into a slice of structs,
+// dest must be a pointer to a slice of pointers to structs.  It returns the number of items
+// found (which is not necessarily the # of items set).
 func (l loader) LoadStructs(dest interface{}) (int, error) {
 	//
 	// Validate the dest, and extract the reflection values we need.
@@ -123,9 +123,8 @@ func (l loader) LoadStructs(dest interface{}) (int, error) {
 	return numberOfRowsReturned, nil
 }
 
-// LoadStruct executes the SelectBuilder and loads the resulting data into a struct
-// dest must be a pointer to a struct
-// Returns ErrNotFound if nothing was found
+// LoadStruct executes the SelectBuilder and loads the resulting data into a struct,
+// dest must be a pointer to a struct. Returns ErrNotFound if nothing was found.
 func (l loader) LoadStruct(dest interface{}) error {
 	//
 	// Validate the dest, and extract the reflection values we need.
@@ -196,8 +195,8 @@ func (l loader) LoadStruct(dest interface{}) error {
 	return ErrNotFound
 }
 
-// LoadValues executes the SelectBuilder and loads the resulting data into a slice of primitive values
-// Returns ErrNotFound if no value was found, and it was therefore not set.
+// LoadValues executes the SelectBuilder and loads the resulting data into a slice of
+// primitive values. Returns ErrNotFound if no value was found, and it was therefore not set.
 func (l loader) LoadValues(dest interface{}) (int, error) {
 	// Validate the dest and reflection values we need
 
@@ -270,7 +269,7 @@ func (l loader) LoadValues(dest interface{}) (int, error) {
 	return numberOfRowsReturned, nil
 }
 
-// LoadValue executes the SelectBuilder and loads the resulting data into a primitive value
+// LoadValue executes the SelectBuilder and loads the resulting data into a primitive value.
 // Returns ErrNotFound if no value was found, and it was therefore not set.
 func (l loader) LoadValue(dest interface{}) error {
 	// Validate the dest

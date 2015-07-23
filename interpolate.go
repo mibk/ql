@@ -11,8 +11,8 @@ import (
 	"unicode/utf8"
 )
 
-// Need to turn \x00, \n, \r, \, ', " and \x1a
-// Returns an escaped, quoted string. eg, "hello 'world'" -> "'hello \'world\''"
+// Need to turn \x00, \n, \r, \, ', " and \x1a.
+// Returns an escaped, quoted string. eg, "hello 'world'" -> "'hello \'world\''".
 func escapeAndQuoteString(val string) string {
 	buf := bytes.Buffer{}
 

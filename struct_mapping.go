@@ -13,7 +13,7 @@ type fieldMapQueueElement struct {
 	Idxs []int
 }
 
-// recordType is the type of a structure
+// recordType is the type of a structure.
 func (db *Connection) calculateFieldMap(recordType reflect.Type, columns []string, requireAllColumns bool) ([][]int, error) {
 	// each value is either the slice to get to the field via FieldByIndex(index []int) in the record, or nil if we don't want to map it to the structure.
 	lenColumns := len(columns)

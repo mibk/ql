@@ -4,15 +4,15 @@ import (
 	"database/sql"
 )
 
-// Connection is a connection to the database with an EventReceiver
-// to send events, errors, and timings to
+// Connection is a connection to the database with an EventReceiver to send events,
+// errors, and timings to.
 type Connection struct {
 	Db *sql.DB
 	EventReceiver
 }
 
 // NewConnection instantiates a Connection for a given database/sql connection
-// and event receiver
+// and event receiver.
 func NewConnection(db *sql.DB, log EventReceiver) *Connection {
 	if log == nil {
 		log = nullReceiver
