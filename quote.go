@@ -2,6 +2,7 @@ package ql
 
 import (
 	"bytes"
+	"strings"
 )
 
 // Quoter is the quoter to use for quoting text; use Mysql quoting by default.
@@ -17,6 +18,7 @@ type MysqlQuoter struct{}
 
 func (q MysqlQuoter) writeQuotedColumn(column string, sql *bytes.Buffer) {
 	sql.WriteRune('`')
-	sql.WriteString(column)
+	r := strings.NewReplacer("`", "``", ".", "`.`")
+	sql.WriteString(r.Replace(column))
 	sql.WriteRune('`')
 }

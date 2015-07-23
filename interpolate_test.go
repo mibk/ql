@@ -103,3 +103,25 @@ func TestInterpolateErrors(t *testing.T) {
 	_, err = Interpolate("SELECT * FROM x WHERE a = ?", []interface{}{[]struct{}{struct{}{}, struct{}{}}})
 	assert.Equal(t, err, ErrInvalidSliceValue)
 }
+
+func TestQuoting(t *testing.T) {
+	tests := []struct {
+		sql string
+		exp string
+	}{
+		{"SELECT [name] FROM [user]", "SELECT `name` FROM `user`"},
+		{"SELECT [u.name] FROM [user] [u]", "SELECT `u`.`name` FROM `user` `u`"},
+		{"SELECT [u.na`me] FROM [user] [u]", "SELECT `u`.`na``me` FROM `user` `u`"},
+	}
+
+	for _, test := range tests {
+		str, err := Interpolate(test.sql, []interface{}{})
+		if err != nil {
+			t.Errorf("error should be nil (%v)", test.sql)
+		}
+		if str != test.exp {
+			t.Errorf("\ngot: %v\nwant: %v", str, test.exp)
+		}
+	}
+
+}

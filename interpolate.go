@@ -81,25 +81,17 @@ func Interpolate(sql string, vals []interface{}) (string, error) {
 		return "", nil
 	}
 
-	// If we have no args and the query has no place holders return early
-	// No args for a query with place holders is an error
-	if len(vals) == 0 {
-		for _, c := range sql {
-			if c == '?' {
-				return "", ErrArgumentMismatch
-			}
-		}
-		return sql, nil
-	}
-
 	// Iterate over each rune in the sql string and replace with the next arg if it's a place holder
 	curVal := 0
 	buf := bytes.Buffer{}
 
-	for _, r := range sql {
-		if r != '?' {
-			buf.WriteRune(r)
-		} else if r == '?' && curVal < maxVals {
+	pos := 0
+	for pos < len(sql) {
+		r, w := utf8.DecodeRuneInString(sql[pos:])
+		pos += w
+
+		switch {
+		case r == '?' && curVal < maxVals:
 			v := vals[curVal]
 
 			valuer, ok := v.(driver.Valuer)
@@ -190,7 +182,14 @@ func Interpolate(sql string, vals []interface{}) (string, error) {
 			}
 
 			curVal++
-		} else {
+		case r == '[':
+			w := strings.IndexRune(sql[pos:], ']')
+			col := sql[pos : pos+w]
+			Quoter.writeQuotedColumn(col, &buf)
+			pos += w + 1 // size of ']'
+		case r != '?':
+			buf.WriteRune(r)
+		default:
 			return "", ErrArgumentMismatch
 		}
 	}
