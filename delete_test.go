@@ -7,7 +7,7 @@ import (
 )
 
 func BenchmarkDeleteSql(b *testing.B) {
-	s := createFakeSession()
+	s := createFakeConnection()
 
 	b.ResetTimer()
 
@@ -17,7 +17,7 @@ func BenchmarkDeleteSql(b *testing.B) {
 }
 
 func TestDeleteAllToSql(t *testing.T) {
-	s := createFakeSession()
+	s := createFakeConnection()
 
 	sql, _ := s.DeleteFrom("a").ToSql()
 
@@ -25,7 +25,7 @@ func TestDeleteAllToSql(t *testing.T) {
 }
 
 func TestDeleteSingleToSql(t *testing.T) {
-	s := createFakeSession()
+	s := createFakeConnection()
 
 	sql, args := s.DeleteFrom("a").Where("id = ?", 1).ToSql()
 
@@ -34,7 +34,7 @@ func TestDeleteSingleToSql(t *testing.T) {
 }
 
 func TestDeleteTenStaringFromTwentyToSql(t *testing.T) {
-	s := createFakeSession()
+	s := createFakeConnection()
 
 	sql, _ := s.DeleteFrom("a").Limit(10).Offset(20).OrderBy("id").ToSql()
 
@@ -42,7 +42,7 @@ func TestDeleteTenStaringFromTwentyToSql(t *testing.T) {
 }
 
 func TestDeleteReal(t *testing.T) {
-	s := createRealSessionWithFixtures()
+	s := createRealConnectionWithFixtures()
 
 	// Insert a Barack
 	res, err := s.InsertInto("dbr_people").Columns("name", "email").Values("Barack", "barack@whitehouse.gov").Exec()

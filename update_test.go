@@ -7,7 +7,7 @@ import (
 )
 
 func BenchmarkUpdateValuesSql(b *testing.B) {
-	s := createFakeSession()
+	s := createFakeConnection()
 
 	b.ResetTimer()
 
@@ -17,7 +17,7 @@ func BenchmarkUpdateValuesSql(b *testing.B) {
 }
 
 func BenchmarkUpdateValueMapSql(b *testing.B) {
-	s := createFakeSession()
+	s := createFakeConnection()
 
 	b.ResetTimer()
 
@@ -27,7 +27,7 @@ func BenchmarkUpdateValueMapSql(b *testing.B) {
 }
 
 func TestUpdateAllToSql(t *testing.T) {
-	s := createFakeSession()
+	s := createFakeConnection()
 
 	sql, args := s.Update("a").Set("b", 1).Set("c", 2).ToSql()
 
@@ -36,7 +36,7 @@ func TestUpdateAllToSql(t *testing.T) {
 }
 
 func TestUpdateSingleToSql(t *testing.T) {
-	s := createFakeSession()
+	s := createFakeConnection()
 
 	sql, args := s.Update("a").Set("b", 1).Set("c", 2).Where("id = ?", 1).ToSql()
 
@@ -45,7 +45,7 @@ func TestUpdateSingleToSql(t *testing.T) {
 }
 
 func TestUpdateSetMapToSql(t *testing.T) {
-	s := createFakeSession()
+	s := createFakeConnection()
 
 	sql, args := s.Update("a").SetMap(map[string]interface{}{"b": 1, "c": 2}).Where("id = ?", 1).ToSql()
 
@@ -58,7 +58,7 @@ func TestUpdateSetMapToSql(t *testing.T) {
 }
 
 func TestUpdateSetExprToSql(t *testing.T) {
-	s := createFakeSession()
+	s := createFakeConnection()
 
 	sql, args := s.Update("a").Set("foo", 1).Set("bar", Expr("COALESCE(bar, 0) + 1")).Where("id = ?", 9).ToSql()
 
@@ -72,7 +72,7 @@ func TestUpdateSetExprToSql(t *testing.T) {
 }
 
 func TestUpdateTenStaringFromTwentyToSql(t *testing.T) {
-	s := createFakeSession()
+	s := createFakeConnection()
 
 	sql, args := s.Update("a").Set("b", 1).Limit(10).Offset(20).ToSql()
 
@@ -81,7 +81,7 @@ func TestUpdateTenStaringFromTwentyToSql(t *testing.T) {
 }
 
 func TestUpdateKeywordColumnName(t *testing.T) {
-	s := createRealSessionWithFixtures()
+	s := createRealConnectionWithFixtures()
 
 	// Insert a user with a key
 	res, err := s.InsertInto("dbr_people").Columns("name", "email", "key").Values("Benjamin", "ben@whitehouse.gov", "6").Exec()
@@ -105,7 +105,7 @@ func TestUpdateKeywordColumnName(t *testing.T) {
 }
 
 func TestUpdateReal(t *testing.T) {
-	s := createRealSessionWithFixtures()
+	s := createRealConnectionWithFixtures()
 
 	// Insert a George
 	res, err := s.InsertInto("dbr_people").Columns("name", "email").Values("George", "george@whitehouse.gov").Exec()

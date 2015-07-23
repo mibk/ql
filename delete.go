@@ -9,7 +9,7 @@ import (
 
 // DeleteBuilder contains the clauses for a DELETE statement
 type DeleteBuilder struct {
-	*Session
+	*Connection
 	runner
 
 	From           string
@@ -22,11 +22,11 @@ type DeleteBuilder struct {
 }
 
 // DeleteFrom creates a new DeleteBuilder for the given table
-func (sess *Session) DeleteFrom(from string) *DeleteBuilder {
+func (db *Connection) DeleteFrom(from string) *DeleteBuilder {
 	return &DeleteBuilder{
-		Session: sess,
-		runner:  sess.cxn.Db,
-		From:    from,
+		Connection: db,
+		runner:     db.Db,
+		From:       from,
 	}
 }
 
@@ -34,9 +34,9 @@ func (sess *Session) DeleteFrom(from string) *DeleteBuilder {
 // in the context for a transaction
 func (tx *Tx) DeleteFrom(from string) *DeleteBuilder {
 	return &DeleteBuilder{
-		Session: tx.Session,
-		runner:  tx.Tx,
-		From:    from,
+		Connection: tx.Connection,
+		runner:     tx.Tx,
+		From:       from,
 	}
 }
 

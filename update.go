@@ -9,7 +9,7 @@ import (
 
 // UpdateBuilder contains the clauses for an UPDATE statement
 type UpdateBuilder struct {
-	*Session
+	*Connection
 	runner
 
 	RawFullSql   string
@@ -31,19 +31,19 @@ type setClause struct {
 }
 
 // Update creates a new UpdateBuilder for the given table
-func (sess *Session) Update(table string) *UpdateBuilder {
+func (db *Connection) Update(table string) *UpdateBuilder {
 	return &UpdateBuilder{
-		Session: sess,
-		runner:  sess.cxn.Db,
-		Table:   table,
+		Connection: db,
+		runner:     db.Db,
+		Table:      table,
 	}
 }
 
 // UpdateBySql creates a new UpdateBuilder for the given SQL string and arguments
-func (sess *Session) UpdateBySql(sql string, args ...interface{}) *UpdateBuilder {
+func (db *Connection) UpdateBySql(sql string, args ...interface{}) *UpdateBuilder {
 	return &UpdateBuilder{
-		Session:      sess,
-		runner:       sess.cxn.Db,
+		Connection:   db,
+		runner:       db.Db,
 		RawFullSql:   sql,
 		RawArguments: args,
 	}
@@ -52,16 +52,16 @@ func (sess *Session) UpdateBySql(sql string, args ...interface{}) *UpdateBuilder
 // Update creates a new UpdateBuilder for the given table bound to a transaction
 func (tx *Tx) Update(table string) *UpdateBuilder {
 	return &UpdateBuilder{
-		Session: tx.Session,
-		runner:  tx.Tx,
-		Table:   table,
+		Connection: tx.Connection,
+		runner:     tx.Tx,
+		Table:      table,
 	}
 }
 
 // UpdateBySql creates a new UpdateBuilder for the given SQL string and arguments bound to a transaction
 func (tx *Tx) UpdateBySql(sql string, args ...interface{}) *UpdateBuilder {
 	return &UpdateBuilder{
-		Session:      tx.Session,
+		Connection:   tx.Connection,
 		runner:       tx.Tx,
 		RawFullSql:   sql,
 		RawArguments: args,

@@ -11,7 +11,7 @@ import (
 )
 
 func TestNullTypeScanning(t *testing.T) {
-	s := createRealSessionWithFixtures()
+	s := createRealConnectionWithFixtures()
 
 	type nullTypeScanningTest struct {
 		record *nullTypedRecord

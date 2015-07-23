@@ -6,22 +6,22 @@ import (
 
 // Tx is a transaction for the given Session
 type Tx struct {
-	*Session
+	*Connection
 	*sql.Tx
 }
 
-// Begin creates a transaction for the given session
-func (sess *Session) Begin() (*Tx, error) {
-	tx, err := sess.cxn.Db.Begin()
+// Begin creates a transaction for the given connection
+func (db *Connection) Begin() (*Tx, error) {
+	tx, err := db.Db.Begin()
 	if err != nil {
-		return nil, sess.EventErr("dbr.begin.error", err)
+		return nil, db.EventErr("dbr.begin.error", err)
 	} else {
-		sess.Event("dbr.begin")
+		db.Event("dbr.begin")
 	}
 
 	return &Tx{
-		Session: sess,
-		Tx:      tx,
+		Connection: db,
+		Tx:         tx,
 	}, nil
 }
 

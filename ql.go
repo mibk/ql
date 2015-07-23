@@ -11,12 +11,6 @@ type Connection struct {
 	EventReceiver
 }
 
-// Session represents a business unit of execution for some connection
-type Session struct {
-	cxn *Connection
-	EventReceiver
-}
-
 // NewConnection instantiates a Connection for a given database/sql connection
 // and event receiver
 func NewConnection(db *sql.DB, log EventReceiver) *Connection {
@@ -25,14 +19,6 @@ func NewConnection(db *sql.DB, log EventReceiver) *Connection {
 	}
 
 	return &Connection{Db: db, EventReceiver: log}
-}
-
-// NewSession instantiates a Session for the Connection
-func (cxn *Connection) NewSession(log EventReceiver) *Session {
-	if log == nil {
-		log = cxn.EventReceiver // Use parent instrumentation
-	}
-	return &Session{cxn: cxn, EventReceiver: log}
 }
 
 // SessionRunner can do anything that a Session can except start a transaction.

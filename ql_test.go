@@ -11,21 +11,19 @@ import (
 // Test helpers
 //
 
-// Returns a session that's not backed by a database
-func createFakeSession() *Session {
-	cxn := NewConnection(nil, nil)
-	return cxn.NewSession(nil)
+// Returns a dbion that's not backed by a database
+func createFakeConnection() *Connection {
+	return NewConnection(nil, nil)
 }
 
-func createRealSession() *Session {
-	cxn := NewConnection(realDb(), nil)
-	return cxn.NewSession(nil)
+func createRealConnection() *Connection {
+	return NewConnection(realDb(), nil)
 }
 
-func createRealSessionWithFixtures() *Session {
-	sess := createRealSession()
-	installFixtures(sess.cxn.Db)
-	return sess
+func createRealConnectionWithFixtures() *Connection {
+	db := createRealConnection()
+	installFixtures(db.Db)
+	return db
 }
 
 func realDb() *sql.DB {

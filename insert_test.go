@@ -14,7 +14,7 @@ type someRecord struct {
 }
 
 func BenchmarkInsertValuesSql(b *testing.B) {
-	s := createFakeSession()
+	s := createFakeConnection()
 
 	b.ResetTimer()
 
@@ -24,7 +24,7 @@ func BenchmarkInsertValuesSql(b *testing.B) {
 }
 
 func BenchmarkInsertRecordsSql(b *testing.B) {
-	s := createFakeSession()
+	s := createFakeConnection()
 	obj := someRecord{1, 99, false}
 
 	b.ResetTimer()
@@ -35,7 +35,7 @@ func BenchmarkInsertRecordsSql(b *testing.B) {
 }
 
 func TestInsertSingleToSql(t *testing.T) {
-	s := createFakeSession()
+	s := createFakeConnection()
 
 	sql, args := s.InsertInto("a").Columns("b", "c").Values(1, 2).ToSql()
 
@@ -44,7 +44,7 @@ func TestInsertSingleToSql(t *testing.T) {
 }
 
 func TestInsertMultipleToSql(t *testing.T) {
-	s := createFakeSession()
+	s := createFakeConnection()
 
 	sql, args := s.InsertInto("a").Columns("b", "c").Values(1, 2).Values(3, 4).ToSql()
 
@@ -53,7 +53,7 @@ func TestInsertMultipleToSql(t *testing.T) {
 }
 
 func TestInsertRecordsToSql(t *testing.T) {
-	s := createFakeSession()
+	s := createFakeConnection()
 
 	objs := []someRecord{{1, 88, false}, {2, 99, true}}
 	sql, args := s.InsertInto("a").Columns("something_id", "user_id", "other").Record(objs[0]).Record(objs[1]).ToSql()
@@ -64,7 +64,7 @@ func TestInsertRecordsToSql(t *testing.T) {
 
 func TestInsertKeywordColumnName(t *testing.T) {
 	// Insert a column whose name is reserved
-	s := createRealSessionWithFixtures()
+	s := createRealConnectionWithFixtures()
 	res, err := s.InsertInto("dbr_people").Columns("name", "key").Values("Barack", "44").Exec()
 	assert.NoError(t, err)
 
@@ -75,12 +75,12 @@ func TestInsertKeywordColumnName(t *testing.T) {
 
 func TestInsertReal(t *testing.T) {
 	// Insert by specifying values
-	s := createRealSessionWithFixtures()
+	s := createRealConnectionWithFixtures()
 	res, err := s.InsertInto("dbr_people").Columns("name", "email").Values("Barack", "obama@whitehouse.gov").Exec()
 	validateInsertingBarack(t, s, res, err)
 
 	// Insert by specifying a record (ptr to struct)
-	s = createRealSessionWithFixtures()
+	s = createRealConnectionWithFixtures()
 	person := dbrPerson{Name: "Barack"}
 	person.Email.Valid = true
 	person.Email.String = "obama@whitehouse.gov"
@@ -88,12 +88,12 @@ func TestInsertReal(t *testing.T) {
 	validateInsertingBarack(t, s, res, err)
 
 	// Insert by specifying a record (struct)
-	s = createRealSessionWithFixtures()
+	s = createRealConnectionWithFixtures()
 	res, err = s.InsertInto("dbr_people").Columns("name", "email").Record(person).Exec()
 	validateInsertingBarack(t, s, res, err)
 }
 
-func validateInsertingBarack(t *testing.T, s *Session, res sql.Result, err error) {
+func validateInsertingBarack(t *testing.T, s *Connection, res sql.Result, err error) {
 	assert.NoError(t, err)
 	id, err := res.LastInsertId()
 	assert.NoError(t, err)

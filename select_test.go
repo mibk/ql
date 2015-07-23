@@ -7,7 +7,7 @@ import (
 )
 
 func BenchmarkSelectBasicSql(b *testing.B) {
-	s := createFakeSession()
+	s := createFakeConnection()
 
 	// Do some allocations outside the loop so they don't affect the results
 	argEq := Eq{"a": []int{1, 2, 3}}
@@ -25,7 +25,7 @@ func BenchmarkSelectBasicSql(b *testing.B) {
 }
 
 func BenchmarkSelectFullSql(b *testing.B) {
-	s := createFakeSession()
+	s := createFakeConnection()
 
 	// Do some allocations outside the loop so they don't affect the results
 	argEq1 := Eq{"f": 2, "x": "hi"}
@@ -57,7 +57,7 @@ func BenchmarkSelectFullSql(b *testing.B) {
 }
 
 func TestSelectBasicToSql(t *testing.T) {
-	s := createFakeSession()
+	s := createFakeConnection()
 
 	sql, args := s.Select("a", "b").From("c").Where("id = ?", 1).ToSql()
 
@@ -66,7 +66,7 @@ func TestSelectBasicToSql(t *testing.T) {
 }
 
 func TestSelectFullToSql(t *testing.T) {
-	s := createFakeSession()
+	s := createFakeConnection()
 
 	sql, args := s.Select("a", "b").
 		Distinct().
@@ -87,7 +87,7 @@ func TestSelectFullToSql(t *testing.T) {
 }
 
 func TestSelectPaginateOrderDirToSql(t *testing.T) {
-	s := createFakeSession()
+	s := createFakeConnection()
 
 	sql, args := s.Select("a", "b").
 		From("c").
@@ -111,7 +111,7 @@ func TestSelectPaginateOrderDirToSql(t *testing.T) {
 }
 
 func TestSelectNoWhereSql(t *testing.T) {
-	s := createFakeSession()
+	s := createFakeConnection()
 
 	sql, args := s.Select("a", "b").From("c").ToSql()
 
@@ -120,7 +120,7 @@ func TestSelectNoWhereSql(t *testing.T) {
 }
 
 func TestSelectMultiHavingSql(t *testing.T) {
-	s := createFakeSession()
+	s := createFakeConnection()
 
 	sql, args := s.Select("a", "b").From("c").Where("p = ?", 1).GroupBy("z").Having("z = ?", 2).Having("y = ?", 3).ToSql()
 
@@ -129,7 +129,7 @@ func TestSelectMultiHavingSql(t *testing.T) {
 }
 
 func TestSelectMultiOrderSql(t *testing.T) {
-	s := createFakeSession()
+	s := createFakeConnection()
 
 	sql, args := s.Select("a", "b").From("c").OrderBy("name ASC").OrderBy("id DESC").ToSql()
 
@@ -138,7 +138,7 @@ func TestSelectMultiOrderSql(t *testing.T) {
 }
 
 func TestSelectWhereMapSql(t *testing.T) {
-	s := createFakeSession()
+	s := createFakeConnection()
 
 	sql, args := s.Select("a").From("b").Where(map[string]interface{}{"a": 1}).ToSql()
 	assert.Equal(t, sql, "SELECT a FROM b WHERE (`a` = ?)")
@@ -183,7 +183,7 @@ func TestSelectWhereMapSql(t *testing.T) {
 }
 
 func TestSelectWhereEqSql(t *testing.T) {
-	s := createFakeSession()
+	s := createFakeConnection()
 
 	sql, args := s.Select("a").From("b").Where(Eq{"a": 1, "b": []int64{1, 2, 3}}).ToSql()
 	if sql == "SELECT a FROM b WHERE (`a` = ?) AND (`b` IN ?)" {
@@ -195,7 +195,7 @@ func TestSelectWhereEqSql(t *testing.T) {
 }
 
 func TestSelectBySql(t *testing.T) {
-	s := createFakeSession()
+	s := createFakeConnection()
 
 	sql, args := s.SelectBySql("SELECT * FROM users WHERE x = 1").ToSql()
 	assert.Equal(t, sql, "SELECT * FROM users WHERE x = 1")
@@ -212,7 +212,7 @@ func TestSelectBySql(t *testing.T) {
 }
 
 func TestSelectVarieties(t *testing.T) {
-	s := createFakeSession()
+	s := createFakeConnection()
 
 	sql, _ := s.Select("id, name, email").From("users").ToSql()
 	sql2, _ := s.Select("id", "name", "email").From("users").ToSql()
@@ -220,7 +220,7 @@ func TestSelectVarieties(t *testing.T) {
 }
 
 func TestSelectLoadStructs(t *testing.T) {
-	s := createRealSessionWithFixtures()
+	s := createRealConnectionWithFixtures()
 
 	var people []*dbrPerson
 	count, err := s.Select("id", "name", "email").From("dbr_people").OrderBy("id ASC").LoadStructs(&people)
@@ -247,7 +247,7 @@ func TestSelectLoadStructs(t *testing.T) {
 }
 
 func TestSelectLoadStruct(t *testing.T) {
-	s := createRealSessionWithFixtures()
+	s := createRealConnectionWithFixtures()
 
 	// Found:
 	var person dbrPerson
@@ -265,7 +265,7 @@ func TestSelectLoadStruct(t *testing.T) {
 }
 
 func TestSelectBySqlLoadStructs(t *testing.T) {
-	s := createRealSessionWithFixtures()
+	s := createRealConnectionWithFixtures()
 
 	var people []*dbrPerson
 	count, err := s.SelectBySql("SELECT name FROM dbr_people WHERE email IN ?", []string{"jonathan@uservoice.com"}).LoadStructs(&people)
@@ -281,7 +281,7 @@ func TestSelectBySqlLoadStructs(t *testing.T) {
 }
 
 func TestSelectLoadValue(t *testing.T) {
-	s := createRealSessionWithFixtures()
+	s := createRealConnectionWithFixtures()
 
 	var name string
 	err := s.Select("name").From("dbr_people").Where("email = 'jonathan@uservoice.com'").LoadValue(&name)
@@ -297,7 +297,7 @@ func TestSelectLoadValue(t *testing.T) {
 }
 
 func TestSelectLoadValues(t *testing.T) {
-	s := createRealSessionWithFixtures()
+	s := createRealConnectionWithFixtures()
 
 	var names []string
 	count, err := s.Select("name").From("dbr_people").LoadValues(&names)
@@ -315,7 +315,7 @@ func TestSelectLoadValues(t *testing.T) {
 }
 
 func TestSelectReturn(t *testing.T) {
-	s := createRealSessionWithFixtures()
+	s := createRealConnectionWithFixtures()
 
 	name, err := s.Select("name").From("dbr_people").Where("email = 'jonathan@uservoice.com'").ReturnString()
 	assert.NoError(t, err)

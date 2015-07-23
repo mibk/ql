@@ -7,7 +7,7 @@ import (
 
 // SelectBuilder contains the clauses for a SELECT statement
 type SelectBuilder struct {
-	*Session
+	*Connection
 	runner
 
 	RawFullSql   string
@@ -27,19 +27,19 @@ type SelectBuilder struct {
 }
 
 // Select creates a new SelectBuilder that select that given columns
-func (sess *Session) Select(cols ...string) *SelectBuilder {
+func (db *Connection) Select(cols ...string) *SelectBuilder {
 	return &SelectBuilder{
-		Session: sess,
-		runner:  sess.cxn.Db,
-		Columns: cols,
+		Connection: db,
+		runner:     db.Db,
+		Columns:    cols,
 	}
 }
 
 // SelectBySql creates a new SelectBuilder for the given SQL string and arguments
-func (sess *Session) SelectBySql(sql string, args ...interface{}) *SelectBuilder {
+func (db *Connection) SelectBySql(sql string, args ...interface{}) *SelectBuilder {
 	return &SelectBuilder{
-		Session:      sess,
-		runner:       sess.cxn.Db,
+		Connection:   db,
+		runner:       db.Db,
 		RawFullSql:   sql,
 		RawArguments: args,
 	}
@@ -48,16 +48,16 @@ func (sess *Session) SelectBySql(sql string, args ...interface{}) *SelectBuilder
 // Select creates a new SelectBuilder that select that given columns bound to the transaction
 func (tx *Tx) Select(cols ...string) *SelectBuilder {
 	return &SelectBuilder{
-		Session: tx.Session,
-		runner:  tx.Tx,
-		Columns: cols,
+		Connection: tx.Connection,
+		runner:     tx.Tx,
+		Columns:    cols,
 	}
 }
 
 // SelectBySql creates a new SelectBuilder for the given SQL string and arguments bound to the transaction
 func (tx *Tx) SelectBySql(sql string, args ...interface{}) *SelectBuilder {
 	return &SelectBuilder{
-		Session:      tx.Session,
+		Connection:   tx.Connection,
 		runner:       tx.Tx,
 		RawFullSql:   sql,
 		RawArguments: args,

@@ -10,7 +10,7 @@ import (
 
 // InsertBuilder contains the clauses for an INSERT statement
 type InsertBuilder struct {
-	*Session
+	*Connection
 	runner
 
 	Into string
@@ -20,20 +20,20 @@ type InsertBuilder struct {
 }
 
 // InsertInto instantiates a InsertBuilder for the given table
-func (sess *Session) InsertInto(into string) *InsertBuilder {
+func (db *Connection) InsertInto(into string) *InsertBuilder {
 	return &InsertBuilder{
-		Session: sess,
-		runner:  sess.cxn.Db,
-		Into:    into,
+		Connection: db,
+		runner:     db.Db,
+		Into:       into,
 	}
 }
 
 // InsertInto instantiates a InsertBuilder for the given table bound to a transaction
 func (tx *Tx) InsertInto(into string) *InsertBuilder {
 	return &InsertBuilder{
-		Session: tx.Session,
-		runner:  tx.Tx,
-		Into:    into,
+		Connection: tx.Connection,
+		runner:     tx.Tx,
+		Into:       into,
 	}
 }
 
