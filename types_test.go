@@ -42,6 +42,9 @@ func TestNullTypeScanning(t *testing.T) {
 		err = s.Select("*").From("null_types").Where("id = ?", id).LoadStruct(nullTypeSet)
 		assert.NoError(t, err)
 
+		// autoincrement ID is not set
+		nullTypeSet.Id = 0
+
 		assert.Equal(t, test.record, nullTypeSet)
 		assert.Equal(t, test.valid, nullTypeSet.StringVal.Valid)
 		assert.Equal(t, test.valid, nullTypeSet.Int64Val.Valid)
