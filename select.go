@@ -7,11 +7,8 @@ import (
 
 // SelectBuilder contains the clauses for a SELECT statement
 type SelectBuilder struct {
-	*Connection
-	runner
-
-	RawFullSql   string
-	RawArguments []interface{}
+	// methods for loading structs and values
+	loader
 
 	IsDistinct      bool
 	Columns         []string
@@ -28,40 +25,22 @@ type SelectBuilder struct {
 
 // Select creates a new SelectBuilder that select that given columns
 func (db *Connection) Select(cols ...string) *SelectBuilder {
-	return &SelectBuilder{
-		Connection: db,
-		runner:     db.Db,
-		Columns:    cols,
+	b := &SelectBuilder{
+		loader:  loader{Connection: db, runner: db.Db},
+		Columns: cols,
 	}
-}
-
-// SelectBySql creates a new SelectBuilder for the given SQL string and arguments
-func (db *Connection) SelectBySql(sql string, args ...interface{}) *SelectBuilder {
-	return &SelectBuilder{
-		Connection:   db,
-		runner:       db.Db,
-		RawFullSql:   sql,
-		RawArguments: args,
-	}
+	b.loader.builder = b
+	return b
 }
 
 // Select creates a new SelectBuilder that select that given columns bound to the transaction
 func (tx *Tx) Select(cols ...string) *SelectBuilder {
-	return &SelectBuilder{
-		Connection: tx.Connection,
-		runner:     tx.Tx,
-		Columns:    cols,
+	b := &SelectBuilder{
+		loader:  loader{Connection: tx.Connection, runner: tx.Tx},
+		Columns: cols,
 	}
-}
-
-// SelectBySql creates a new SelectBuilder for the given SQL string and arguments bound to the transaction
-func (tx *Tx) SelectBySql(sql string, args ...interface{}) *SelectBuilder {
-	return &SelectBuilder{
-		Connection:   tx.Connection,
-		runner:       tx.Tx,
-		RawFullSql:   sql,
-		RawArguments: args,
-	}
+	b.loader.builder = b
+	return b
 }
 
 // Distinct marks the statement as a DISTINCT SELECT
@@ -136,10 +115,6 @@ func (b *SelectBuilder) Paginate(page, perPage uint64) *SelectBuilder {
 // ToSql serialized the SelectBuilder to a SQL string
 // It returns the string with placeholders and a slice of query arguments
 func (b *SelectBuilder) ToSql() (string, []interface{}) {
-	if b.RawFullSql != "" {
-		return b.RawFullSql, b.RawArguments
-	}
-
 	if len(b.Columns) == 0 {
 		panic("no columns specified")
 	}

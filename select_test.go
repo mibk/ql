@@ -197,16 +197,16 @@ func TestSelectWhereEqSql(t *testing.T) {
 func TestSelectBySql(t *testing.T) {
 	s := createFakeConnection()
 
-	sql, args := s.SelectBySql("SELECT * FROM users WHERE x = 1").ToSql()
+	sql, args := s.Query("SELECT * FROM users WHERE x = 1").ToSql()
 	assert.Equal(t, sql, "SELECT * FROM users WHERE x = 1")
 	assert.Equal(t, args, []interface{}(nil))
 
-	sql, args = s.SelectBySql("SELECT * FROM users WHERE x = ? AND y IN ?", 9, []int{5, 6, 7}).ToSql()
+	sql, args = s.Query("SELECT * FROM users WHERE x = ? AND y IN ?", 9, []int{5, 6, 7}).ToSql()
 	assert.Equal(t, sql, "SELECT * FROM users WHERE x = ? AND y IN ?")
 	assert.Equal(t, args, []interface{}{9, []int{5, 6, 7}})
 
 	// Doesn't fix shit if it's broken:
-	sql, args = s.SelectBySql("wat", 9, []int{5, 6, 7}).ToSql()
+	sql, args = s.Query("wat", 9, []int{5, 6, 7}).ToSql()
 	assert.Equal(t, sql, "wat")
 	assert.Equal(t, args, []interface{}{9, []int{5, 6, 7}})
 }
@@ -268,7 +268,7 @@ func TestSelectBySqlLoadStructs(t *testing.T) {
 	s := createRealConnectionWithFixtures()
 
 	var people []*dbrPerson
-	count, err := s.SelectBySql("SELECT name FROM dbr_people WHERE email IN ?", []string{"jonathan@uservoice.com"}).LoadStructs(&people)
+	count, err := s.Query("SELECT name FROM dbr_people WHERE email IN ?", []string{"jonathan@uservoice.com"}).LoadStructs(&people)
 
 	assert.NoError(t, err)
 	assert.Equal(t, count, 1)
