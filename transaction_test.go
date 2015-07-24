@@ -25,7 +25,7 @@ func TestTransactionReal(t *testing.T) {
 	assert.Equal(t, rowsAff, int64(1))
 
 	var person dbrPerson
-	_, err = tx.Select("*").From("dbr_people").Where("id = ?", id).Load(&person)
+	err = tx.Select("*").From("dbr_people").Where("id = ?", id).One(&person)
 	assert.NoError(t, err)
 
 	assert.Equal(t, person.Id, id)
@@ -45,7 +45,7 @@ func TestTransactionRollbackReal(t *testing.T) {
 	assert.NoError(t, err)
 
 	var person dbrPerson
-	_, err = tx.Select("*").From("dbr_people").Where("email = ?", "jonathan@uservoice.com").Load(&person)
+	err = tx.Select("*").From("dbr_people").Where("email = ?", "jonathan@uservoice.com").One(&person)
 	assert.NoError(t, err)
 	assert.Equal(t, person.Name, "Jonathan")
 

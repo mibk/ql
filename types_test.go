@@ -39,7 +39,7 @@ func TestNullTypeScanning(t *testing.T) {
 		// Scan it back and check that all fields are of the correct validity and are
 		// equal to the reference record
 		nullTypeSet := &nullTypedRecord{}
-		_, err = s.Select("*").From("null_types").Where("id = ?", id).Load(nullTypeSet)
+		err = s.Select("*").From("null_types").Where("id = ?", id).One(nullTypeSet)
 		assert.NoError(t, err)
 
 		// autoincrement ID is not set

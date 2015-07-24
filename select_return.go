@@ -32,7 +32,7 @@ func (l loader) ReturnInt64() (int64, error) {
 // ReturnInt64s executes the SelectBuilder and returns the value as a slice of int64s.
 func (l loader) ReturnInt64s() ([]int64, error) {
 	var v []int64
-	_, err := l.Load(&v)
+	_, err := l.All(&v)
 	return v, err
 }
 
@@ -46,7 +46,7 @@ func (l loader) ReturnUint64() (uint64, error) {
 // ReturnUint64s executes the SelectBuilder and returns the value as a slice of uint64s.
 func (l loader) ReturnUint64s() ([]uint64, error) {
 	var v []uint64
-	_, err := l.Load(&v)
+	_, err := l.All(&v)
 	return v, err
 }
 
@@ -60,6 +60,6 @@ func (l loader) ReturnString() (string, error) {
 // ReturnStrings executes the SelectBuilder and returns the value as a slice of strings.
 func (l loader) ReturnStrings() ([]string, error) {
 	var v []string
-	_, err := l.Load(&v)
+	_, err := l.All(&v)
 	return v, err
 }

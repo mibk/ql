@@ -18,12 +18,45 @@ type loader struct {
 	builder sqlBuilder
 }
 
-// Load executes the query and loads the resulting data into the dest, which can be either
-// a single value, or a slice of values. Value can be either a struct, or a simple type.
-// If dest is only a single value, ErrNotFound would be return as an error if none is found.
-// Otherwise, Load returns number of items found (which is not necessarily the number of items
-// set).
-func (l loader) Load(dest interface{}) (n int, err error) {
+// All executes the query and loads the resulting data into the dest, which can be a slice of
+// either structs, or primitive values. It returns n found items (which is not necessarily the
+// number of items set).
+func (l loader) All(dest interface{}) (n int, err error) {
+	valOfDest := reflect.ValueOf(dest)
+	if valOfDest.Kind() != reflect.Ptr {
+		panic("dest must be a pointer to a slice")
+	}
+
+	valOfIndirect := reflect.Indirect(valOfDest)
+	if valOfIndirect.Kind() != reflect.Slice {
+		panic("dest must be a pointer to a slice")
+	}
+
+	originType := valOfIndirect.Type().Elem()
+	elemType := originType
+
+	canBeStruct := true
+	if originType.Kind() != reflect.Ptr {
+		canBeStruct = false
+	} else {
+		elemType = originType.Elem()
+	}
+
+	switch elemType.Kind() {
+	case reflect.Struct:
+		if !canBeStruct {
+			panic("elements of the dest slice must be pointers to structs")
+		}
+		return l.loadStructs(dest, valOfIndirect, elemType)
+	default:
+		return l.loadValues(dest, valOfIndirect, originType)
+	}
+}
+
+// One executes the query and loads the resulting data into the dest, which can be either
+// a struct, or a primitive value. Returns ErrNotFound if no item was found, and it was
+// therefore not set.
+func (l loader) One(dest interface{}) error {
 	valOfDest := reflect.ValueOf(dest)
 	if valOfDest.Kind() != reflect.Ptr {
 		panic("dest must be a pointer")
@@ -31,35 +64,11 @@ func (l loader) Load(dest interface{}) (n int, err error) {
 
 	valOfIndirect := reflect.Indirect(valOfDest)
 	switch valOfIndirect.Kind() {
-	case reflect.Slice:
-		originType := valOfIndirect.Type().Elem()
-		elemType := originType
-
-		canBeStruct := true
-		if originType.Kind() != reflect.Ptr {
-			canBeStruct = false
-		} else {
-			elemType = originType.Elem()
-		}
-
-		switch elemType.Kind() {
-		case reflect.Struct:
-			if !canBeStruct {
-				panic("elements of the dest slice must be pointers to structs")
-			}
-			return l.loadStructs(dest, valOfIndirect, elemType)
-		default:
-			return l.loadValues(dest, valOfIndirect, originType)
-		}
 	case reflect.Struct:
-		err = l.loadStruct(dest, valOfIndirect)
+		return l.loadStruct(dest, valOfIndirect)
 	default:
-		err = l.loadValue(dest)
+		return l.loadValue(dest)
 	}
-	if err == nil {
-		n = 1
-	}
-	return n, err
 }
 
 // loadStructs executes the query and loads the resulting data into a slice of structs,

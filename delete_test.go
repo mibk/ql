@@ -62,7 +62,7 @@ func TestDeleteReal(t *testing.T) {
 	assert.Equal(t, rowsAff, int64(1))
 
 	var count int64
-	_, err = s.Select("count(*)").From("dbr_people").Where("id = ?", id).Load(&count)
+	err = s.Select("count(*)").From("dbr_people").Where("id = ?", id).One(&count)
 	assert.NoError(t, err)
 	assert.Equal(t, count, int64(0))
 }

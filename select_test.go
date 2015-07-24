@@ -223,7 +223,7 @@ func TestSelectLoadStructs(t *testing.T) {
 	s := createRealConnectionWithFixtures()
 
 	var people []*dbrPerson
-	count, err := s.Select("id", "name", "email").From("dbr_people").OrderBy("id ASC").Load(&people)
+	count, err := s.Select("id", "name", "email").From("dbr_people").OrderBy("id ASC").All(&people)
 
 	if err != nil {
 		panic(err)
@@ -254,7 +254,7 @@ func TestSelectLoadStruct(t *testing.T) {
 
 	// Found:
 	var person dbrPerson
-	_, err := s.Select("id", "name", "email").From("dbr_people").Where("email = ?", "jonathan@uservoice.com").Load(&person)
+	err := s.Select("id", "name", "email").From("dbr_people").Where("email = ?", "jonathan@uservoice.com").One(&person)
 	assert.NoError(t, err)
 	assert.True(t, person.Id > 0)
 	assert.Equal(t, person.Name, "Jonathan")
@@ -263,7 +263,7 @@ func TestSelectLoadStruct(t *testing.T) {
 
 	// Not found:
 	var person2 dbrPerson
-	_, err = s.Select("id", "name", "email").From("dbr_people").Where("email = ?", "dontexist@uservoice.com").Load(&person2)
+	err = s.Select("id", "name", "email").From("dbr_people").Where("email = ?", "dontexist@uservoice.com").One(&person2)
 	assert.Equal(t, err, ErrNotFound)
 }
 
@@ -271,7 +271,7 @@ func TestSelectBySqlLoadStructs(t *testing.T) {
 	s := createRealConnectionWithFixtures()
 
 	var people []*dbrPerson
-	count, err := s.Query("SELECT name FROM dbr_people WHERE email IN ?", []string{"jonathan@uservoice.com"}).Load(&people)
+	count, err := s.Query("SELECT name FROM dbr_people WHERE email IN ?", []string{"jonathan@uservoice.com"}).All(&people)
 
 	assert.NoError(t, err)
 	assert.Equal(t, count, 1)
@@ -287,13 +287,13 @@ func TestSelectLoadValue(t *testing.T) {
 	s := createRealConnectionWithFixtures()
 
 	var name string
-	_, err := s.Select("name").From("dbr_people").Where("email = 'jonathan@uservoice.com'").Load(&name)
+	err := s.Select("name").From("dbr_people").Where("email = 'jonathan@uservoice.com'").One(&name)
 
 	assert.NoError(t, err)
 	assert.Equal(t, name, "Jonathan")
 
 	var id int64
-	_, err = s.Select("id").From("dbr_people").Limit(1).Load(&id)
+	err = s.Select("id").From("dbr_people").Limit(1).One(&id)
 
 	assert.NoError(t, err)
 	assert.True(t, id > 0)
@@ -303,14 +303,14 @@ func TestSelectLoadValues(t *testing.T) {
 	s := createRealConnectionWithFixtures()
 
 	var names []string
-	count, err := s.Select("name").From("dbr_people").Load(&names)
+	count, err := s.Select("name").From("dbr_people").All(&names)
 
 	assert.NoError(t, err)
 	assert.Equal(t, count, 2)
 	assert.Equal(t, names, []string{"Jonathan", "Dmitri"})
 
 	var ids []int64
-	count, err = s.Select("id").From("dbr_people").Limit(1).Load(&ids)
+	count, err = s.Select("id").From("dbr_people").Limit(1).All(&ids)
 
 	assert.NoError(t, err)
 	assert.Equal(t, count, 1)
