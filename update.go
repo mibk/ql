@@ -62,14 +62,14 @@ func (b *UpdateBuilder) Where(whereSqlOrMap interface{}, args ...interface{}) *U
 }
 
 // OrderBy appends a column to ORDER the statement by.
-func (b *UpdateBuilder) OrderBy(ord string) *UpdateBuilder {
-	b.orderBy(ord)
+func (b *UpdateBuilder) OrderBy(expr string) *UpdateBuilder {
+	b.orderBy(expr)
 	return b
 }
 
-// OrderDir appends a column to ORDER the statement by with a given direction.
-func (b *UpdateBuilder) OrderDir(ord string, isAsc bool) *UpdateBuilder {
-	b.orderDir(ord, isAsc)
+// Order accepts By map of columns and directions to ORDER the statement by.
+func (b *UpdateBuilder) Order(by By) *UpdateBuilder {
+	b.order(by)
 	return b
 }
 

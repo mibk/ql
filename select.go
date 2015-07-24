@@ -72,14 +72,14 @@ func (b *SelectBuilder) Having(whereSqlOrMap interface{}, args ...interface{}) *
 }
 
 // OrderBy appends a column to ORDER the statement by.
-func (b *SelectBuilder) OrderBy(ord string) *SelectBuilder {
-	b.orderBy(ord)
+func (b *SelectBuilder) OrderBy(expr string) *SelectBuilder {
+	b.orderBy(expr)
 	return b
 }
 
-// OrderDir appends a column to ORDER the statement by with a given direction.
-func (b *SelectBuilder) OrderDir(ord string, isAsc bool) *SelectBuilder {
-	b.orderDir(ord, isAsc)
+// Order accepts By map of columns and directions to ORDER the statement by.
+func (b *SelectBuilder) Order(by By) *SelectBuilder {
+	b.order(by)
 	return b
 }
 

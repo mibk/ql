@@ -1,5 +1,17 @@
 package ql
 
+type direction bool
+
+const (
+	Asc  direction = false
+	Desc direction = true
+)
+
+// By is a map of columns and order directions used in builders' Order methods.
+// Example of usage:
+//	b.Order(ql.By{"col1": ql.Asc,"col2": ql.Desc})
+type By map[string]direction
+
 // builder a subset of clauses for the SelectBuilder, InsertBuilder, and DeleteBuilder.
 type builder struct {
 	WhereFragments []*whereFragment
@@ -18,11 +30,15 @@ func (b *builder) orderBy(expr string) {
 	b.OrderBys = append(b.OrderBys, expr)
 }
 
-func (b *builder) orderDir(expr string, isAsc bool) {
-	if isAsc {
-		b.OrderBys = append(b.OrderBys, expr+" ASC")
-	} else {
-		b.OrderBys = append(b.OrderBys, expr+" DESC")
+func (b *builder) order(by By) {
+	for col, dir := range by {
+		expr := "[" + col + "]"
+		if dir == Desc {
+			expr += " DESC"
+		} else {
+			expr += " ASC"
+		}
+		b.orderBy(expr)
 	}
 }
 

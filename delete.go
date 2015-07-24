@@ -44,14 +44,14 @@ func (b *DeleteBuilder) Where(whereSqlOrMap interface{}, args ...interface{}) *D
 }
 
 // OrderBy appends an ORDER BY clause to the statement.
-func (b *DeleteBuilder) OrderBy(ord string) *DeleteBuilder {
-	b.orderBy(ord)
+func (b *DeleteBuilder) OrderBy(expr string) *DeleteBuilder {
+	b.orderBy(expr)
 	return b
 }
 
-// OrderDir appends an ORDER BY clause with a direction to the statement.
-func (b *DeleteBuilder) OrderDir(ord string, isAsc bool) *DeleteBuilder {
-	b.orderDir(ord, isAsc)
+// Order accepts By map of columns and directions to ORDER the statement by.
+func (b *DeleteBuilder) Order(by By) *DeleteBuilder {
+	b.order(by)
 	return b
 }
 
