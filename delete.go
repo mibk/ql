@@ -3,7 +3,6 @@ package ql
 import (
 	"bytes"
 	"database/sql"
-	"fmt"
 )
 
 // DeleteBuilder contains the clauses for a DELETE statement.
@@ -74,38 +73,15 @@ func (b *DeleteBuilder) ToSql() (string, []interface{}) {
 		panic("no table specified")
 	}
 
-	var sql bytes.Buffer
+	sql := new(bytes.Buffer)
 	var args []interface{}
 
 	sql.WriteString("DELETE FROM ")
 	sql.WriteString(b.From)
 
-	// Write WHERE clause if we have any fragments
-	if len(b.WhereFragments) > 0 {
-		sql.WriteString(" WHERE ")
-		writeWhereFragmentsToSql(b.WhereFragments, &sql, &args)
-	}
-
-	// Ordering and limiting
-	if len(b.OrderBys) > 0 {
-		sql.WriteString(" ORDER BY ")
-		for i, s := range b.OrderBys {
-			if i > 0 {
-				sql.WriteString(", ")
-			}
-			sql.WriteString(s)
-		}
-	}
-
-	if b.LimitValid {
-		sql.WriteString(" LIMIT ")
-		fmt.Fprint(&sql, b.LimitCount)
-	}
-
-	if b.OffsetValid {
-		sql.WriteString(" OFFSET ")
-		fmt.Fprint(&sql, b.OffsetCount)
-	}
+	b.buildWhere(sql, &args)
+	b.buildOrder(sql)
+	b.buildLimitAndOffset(sql)
 
 	return sql.String(), args
 }

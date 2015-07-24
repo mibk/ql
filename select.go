@@ -1,9 +1,6 @@
 package ql
 
-import (
-	"bytes"
-	"fmt"
-)
+import "bytes"
 
 // SelectBuilder contains the clauses for a SELECT statement.
 type SelectBuilder struct {
@@ -105,7 +102,7 @@ func (b *SelectBuilder) ToSql() (string, []interface{}) {
 		panic("no table specified")
 	}
 
-	var sql bytes.Buffer
+	sql := new(bytes.Buffer)
 	var args []interface{}
 
 	sql.WriteString("SELECT ")
@@ -124,10 +121,7 @@ func (b *SelectBuilder) ToSql() (string, []interface{}) {
 	sql.WriteString(" FROM ")
 	sql.WriteString(b.FromTable)
 
-	if len(b.WhereFragments) > 0 {
-		sql.WriteString(" WHERE ")
-		writeWhereFragmentsToSql(b.WhereFragments, &sql, &args)
-	}
+	b.buildWhere(sql, &args)
 
 	if len(b.GroupBys) > 0 {
 		sql.WriteString(" GROUP BY ")
@@ -141,28 +135,11 @@ func (b *SelectBuilder) ToSql() (string, []interface{}) {
 
 	if len(b.HavingFragments) > 0 {
 		sql.WriteString(" HAVING ")
-		writeWhereFragmentsToSql(b.HavingFragments, &sql, &args)
+		writeWhereFragmentsToSql(b.HavingFragments, sql, &args)
 	}
 
-	if len(b.OrderBys) > 0 {
-		sql.WriteString(" ORDER BY ")
-		for i, s := range b.OrderBys {
-			if i > 0 {
-				sql.WriteString(", ")
-			}
-			sql.WriteString(s)
-		}
-	}
-
-	if b.LimitValid {
-		sql.WriteString(" LIMIT ")
-		fmt.Fprint(&sql, b.LimitCount)
-	}
-
-	if b.OffsetValid {
-		sql.WriteString(" OFFSET ")
-		fmt.Fprint(&sql, b.OffsetCount)
-	}
+	b.buildOrder(sql)
+	b.buildLimitAndOffset(sql)
 
 	return sql.String(), args
 }

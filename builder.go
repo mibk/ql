@@ -1,5 +1,10 @@
 package ql
 
+import (
+	"bytes"
+	"fmt"
+)
+
 type direction bool
 
 const (
@@ -50,4 +55,34 @@ func (b *builder) limit(v uint64) {
 func (b *builder) offset(v uint64) {
 	b.OffsetCount = v
 	b.OffsetValid = true
+}
+
+func (b *builder) buildWhere(sql *bytes.Buffer, args *[]interface{}) {
+	if len(b.WhereFragments) > 0 {
+		sql.WriteString(" WHERE ")
+		writeWhereFragmentsToSql(b.WhereFragments, sql, args)
+	}
+}
+
+func (b *builder) buildOrder(sql *bytes.Buffer) {
+	if len(b.OrderBys) > 0 {
+		sql.WriteString(" ORDER BY ")
+		for i, s := range b.OrderBys {
+			if i > 0 {
+				sql.WriteString(", ")
+			}
+			sql.WriteString(s)
+		}
+	}
+}
+
+func (b *builder) buildLimitAndOffset(sql *bytes.Buffer) {
+	if b.LimitValid {
+		sql.WriteString(" LIMIT ")
+		fmt.Fprint(sql, b.LimitCount)
+	}
+	if b.OffsetValid {
+		sql.WriteString(" OFFSET ")
+		fmt.Fprint(sql, b.OffsetCount)
+	}
 }
