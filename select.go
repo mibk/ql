@@ -175,3 +175,11 @@ func (b *SelectBuilder) ToSql() (string, []interface{}) {
 
 	return sql.String(), args
 }
+
+// One executes the query and loads the resulting data into the dest, which can be either
+// a struct, or a primitive value. Returns ErrNotFound if no item was found, and it was
+// therefore not set.
+func (b *SelectBuilder) One(dest interface{}) error {
+	b.Limit(1)
+	return b.loader.One(dest)
+}
