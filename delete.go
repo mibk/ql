@@ -11,13 +11,8 @@ type DeleteBuilder struct {
 	*Connection
 	runner
 
-	From           string
-	WhereFragments []*whereFragment
-	OrderBys       []string
-	LimitCount     uint64
-	LimitValid     bool
-	OffsetCount    uint64
-	OffsetValid    bool
+	From string
+	*builder
 }
 
 // DeleteFrom creates a new DeleteBuilder for the given table.
@@ -26,6 +21,7 @@ func (db *Connection) DeleteFrom(from string) *DeleteBuilder {
 		Connection: db,
 		runner:     db.Db,
 		From:       from,
+		builder:    new(builder),
 	}
 }
 
@@ -36,43 +32,38 @@ func (tx *Tx) DeleteFrom(from string) *DeleteBuilder {
 		Connection: tx.Connection,
 		runner:     tx.Tx,
 		From:       from,
+		builder:    new(builder),
 	}
 }
 
 // Where appends a WHERE clause to the statement whereSqlOrMap can be a string or map.
 // If it's a string, args wil replaces any places holders.
 func (b *DeleteBuilder) Where(whereSqlOrMap interface{}, args ...interface{}) *DeleteBuilder {
-	b.WhereFragments = append(b.WhereFragments, newWhereFragment(whereSqlOrMap, args))
+	b.where(whereSqlOrMap, args...)
 	return b
 }
 
 // OrderBy appends an ORDER BY clause to the statement.
 func (b *DeleteBuilder) OrderBy(ord string) *DeleteBuilder {
-	b.OrderBys = append(b.OrderBys, ord)
+	b.orderBy(ord)
 	return b
 }
 
 // OrderDir appends an ORDER BY clause with a direction to the statement.
 func (b *DeleteBuilder) OrderDir(ord string, isAsc bool) *DeleteBuilder {
-	if isAsc {
-		b.OrderBys = append(b.OrderBys, ord+" ASC")
-	} else {
-		b.OrderBys = append(b.OrderBys, ord+" DESC")
-	}
+	b.orderDir(ord, isAsc)
 	return b
 }
 
 // Limit sets a LIMIT clause for the statement; overrides any existing LIMIT.
 func (b *DeleteBuilder) Limit(limit uint64) *DeleteBuilder {
-	b.LimitCount = limit
-	b.LimitValid = true
+	b.limit(limit)
 	return b
 }
 
 // Offset sets an OFFSET clause for the statement; overrides any existing OFFSET.
 func (b *DeleteBuilder) Offset(offset uint64) *DeleteBuilder {
-	b.OffsetCount = offset
-	b.OffsetValid = true
+	b.offset(offset)
 	return b
 }
 

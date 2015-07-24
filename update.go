@@ -11,14 +11,9 @@ type UpdateBuilder struct {
 	*Connection
 	runner
 
-	Table          string
-	SetClauses     []*setClause
-	WhereFragments []*whereFragment
-	OrderBys       []string
-	LimitCount     uint64
-	LimitValid     bool
-	OffsetCount    uint64
-	OffsetValid    bool
+	Table      string
+	SetClauses []*setClause
+	*builder
 }
 
 type setClause struct {
@@ -32,6 +27,7 @@ func (db *Connection) Update(table string) *UpdateBuilder {
 		Connection: db,
 		runner:     db.Db,
 		Table:      table,
+		builder:    new(builder),
 	}
 }
 
@@ -41,6 +37,7 @@ func (tx *Tx) Update(table string) *UpdateBuilder {
 		Connection: tx.Connection,
 		runner:     tx.Tx,
 		Table:      table,
+		builder:    new(builder),
 	}
 }
 
@@ -60,37 +57,31 @@ func (b *UpdateBuilder) SetMap(clauses map[string]interface{}) *UpdateBuilder {
 
 // Where appends a WHERE clause to the statement.
 func (b *UpdateBuilder) Where(whereSqlOrMap interface{}, args ...interface{}) *UpdateBuilder {
-	b.WhereFragments = append(b.WhereFragments, newWhereFragment(whereSqlOrMap, args))
+	b.where(whereSqlOrMap, args...)
 	return b
 }
 
 // OrderBy appends a column to ORDER the statement by.
 func (b *UpdateBuilder) OrderBy(ord string) *UpdateBuilder {
-	b.OrderBys = append(b.OrderBys, ord)
+	b.orderBy(ord)
 	return b
 }
 
 // OrderDir appends a column to ORDER the statement by with a given direction.
 func (b *UpdateBuilder) OrderDir(ord string, isAsc bool) *UpdateBuilder {
-	if isAsc {
-		b.OrderBys = append(b.OrderBys, ord+" ASC")
-	} else {
-		b.OrderBys = append(b.OrderBys, ord+" DESC")
-	}
+	b.orderDir(ord, isAsc)
 	return b
 }
 
 // Limit sets a limit for the statement; overrides any existing LIMIT.
 func (b *UpdateBuilder) Limit(limit uint64) *UpdateBuilder {
-	b.LimitCount = limit
-	b.LimitValid = true
+	b.limit(limit)
 	return b
 }
 
 // Offset sets an offset for the statement; overrides any existing OFFSET.
 func (b *UpdateBuilder) Offset(offset uint64) *UpdateBuilder {
-	b.OffsetCount = offset
-	b.OffsetValid = true
+	b.offset(offset)
 	return b
 }
 

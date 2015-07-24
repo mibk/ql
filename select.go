@@ -13,14 +13,9 @@ type SelectBuilder struct {
 	IsDistinct      bool
 	Columns         []string
 	FromTable       string
-	WhereFragments  []*whereFragment
 	GroupBys        []string
 	HavingFragments []*whereFragment
-	OrderBys        []string
-	LimitCount      uint64
-	LimitValid      bool
-	OffsetCount     uint64
-	OffsetValid     bool
+	*builder
 }
 
 // Select creates a new SelectBuilder that select that given columns.
@@ -28,6 +23,7 @@ func (db *Connection) Select(cols ...string) *SelectBuilder {
 	b := &SelectBuilder{
 		loader:  loader{Connection: db, runner: db.Db},
 		Columns: cols,
+		builder: new(builder),
 	}
 	b.loader.builder = b
 	return b
@@ -38,6 +34,7 @@ func (tx *Tx) Select(cols ...string) *SelectBuilder {
 	b := &SelectBuilder{
 		loader:  loader{Connection: tx.Connection, runner: tx.Tx},
 		Columns: cols,
+		builder: new(builder),
 	}
 	b.loader.builder = b
 	return b
@@ -58,7 +55,7 @@ func (b *SelectBuilder) From(from string) *SelectBuilder {
 // Where appends a WHERE clause to the statement for the given string and args or map
 // of column/value pairs.
 func (b *SelectBuilder) Where(whereSqlOrMap interface{}, args ...interface{}) *SelectBuilder {
-	b.WhereFragments = append(b.WhereFragments, newWhereFragment(whereSqlOrMap, args))
+	b.where(whereSqlOrMap, args...)
 	return b
 }
 
@@ -76,31 +73,25 @@ func (b *SelectBuilder) Having(whereSqlOrMap interface{}, args ...interface{}) *
 
 // OrderBy appends a column to ORDER the statement by.
 func (b *SelectBuilder) OrderBy(ord string) *SelectBuilder {
-	b.OrderBys = append(b.OrderBys, ord)
+	b.orderBy(ord)
 	return b
 }
 
 // OrderDir appends a column to ORDER the statement by with a given direction.
 func (b *SelectBuilder) OrderDir(ord string, isAsc bool) *SelectBuilder {
-	if isAsc {
-		b.OrderBys = append(b.OrderBys, ord+" ASC")
-	} else {
-		b.OrderBys = append(b.OrderBys, ord+" DESC")
-	}
+	b.orderDir(ord, isAsc)
 	return b
 }
 
 // Limit sets a limit for the statement; overrides any existing LIMIT.
 func (b *SelectBuilder) Limit(limit uint64) *SelectBuilder {
-	b.LimitCount = limit
-	b.LimitValid = true
+	b.limit(limit)
 	return b
 }
 
 // Offset sets an offset for the statement; overrides any existing OFFSET.
 func (b *SelectBuilder) Offset(offset uint64) *SelectBuilder {
-	b.OffsetCount = offset
-	b.OffsetValid = true
+	b.offset(offset)
 	return b
 }
 
