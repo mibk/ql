@@ -65,10 +65,10 @@ func isFloat(k reflect.Kind) bool {
 //   - times
 var typeOfTime = reflect.TypeOf(time.Time{})
 
-// Interpolate takes a SQL string with placeholders and a list of arguments to
-// replace them with. Returns a blank string and error if the number of placeholders
+// Preprocess takes an SQL string with placeholders and a list of arguments to
+// replace them with. It returns a blank string and error if the number of placeholders
 // does not match the number of arguments.
-func Interpolate(sql string, vals []interface{}) (string, error) {
+func Preprocess(sql string, vals []interface{}) (string, error) {
 	// Get the number of arguments to add to this query
 	maxVals := len(vals)
 
@@ -83,7 +83,7 @@ func Interpolate(sql string, vals []interface{}) (string, error) {
 
 	// Iterate over each rune in the sql string and replace with the next arg if it's a place holder
 	curVal := 0
-	buf := bytes.Buffer{}
+	buf := new(bytes.Buffer)
 
 	pos := 0
 	for pos < len(sql) {
@@ -92,100 +92,26 @@ func Interpolate(sql string, vals []interface{}) (string, error) {
 
 		switch {
 		case r == '?' && curVal < maxVals:
-			v := vals[curVal]
-
-			valuer, ok := v.(driver.Valuer)
-			if ok {
-				val, err := valuer.Value()
-				if err != nil {
-					return "", err
-				}
-				v = val
+			if err := interpolate(buf, vals[curVal]); err != nil {
+				return "", err
 			}
-
-			valueOfV := reflect.ValueOf(v)
-			kindOfV := valueOfV.Kind()
-
-			if v == nil {
-				buf.WriteString("NULL")
-			} else if isInt(kindOfV) {
-				var ival = valueOfV.Int()
-
-				buf.WriteString(strconv.FormatInt(ival, 10))
-			} else if isUint(kindOfV) {
-				var uival = valueOfV.Uint()
-
-				buf.WriteString(strconv.FormatUint(uival, 10))
-			} else if kindOfV == reflect.String {
-				var str = valueOfV.String()
-
-				if !utf8.ValidString(str) {
-					return "", ErrNotUTF8
-				}
-
-				buf.WriteString(escapeAndQuoteString(str))
-			} else if isFloat(kindOfV) {
-				var fval = valueOfV.Float()
-
-				buf.WriteString(strconv.FormatFloat(fval, 'f', -1, 64))
-			} else if kindOfV == reflect.Bool {
-				var bval = valueOfV.Bool()
-
-				if bval {
-					buf.WriteRune('1')
-				} else {
-					buf.WriteRune('0')
-				}
-			} else if kindOfV == reflect.Struct {
-				if typeOfV := valueOfV.Type(); typeOfV == typeOfTime {
-					t := valueOfV.Interface().(time.Time)
-					buf.WriteString(escapeAndQuoteString(t.UTC().Format(timeFormat)))
-				} else {
-					return "", ErrInvalidValue
-				}
-			} else if kindOfV == reflect.Slice {
-				typeOfV := reflect.TypeOf(v)
-				subtype := typeOfV.Elem()
-				kindOfSubtype := subtype.Kind()
-
-				sliceLen := valueOfV.Len()
-				stringSlice := make([]string, 0, sliceLen)
-
-				if sliceLen == 0 {
-					return "", ErrInvalidSliceLength
-				} else if isInt(kindOfSubtype) {
-					for i := 0; i < sliceLen; i++ {
-						var ival = valueOfV.Index(i).Int()
-						stringSlice = append(stringSlice, strconv.FormatInt(ival, 10))
-					}
-				} else if isUint(kindOfSubtype) {
-					for i := 0; i < sliceLen; i++ {
-						var uival = valueOfV.Index(i).Uint()
-						stringSlice = append(stringSlice, strconv.FormatUint(uival, 10))
-					}
-				} else if kindOfSubtype == reflect.String {
-					for i := 0; i < sliceLen; i++ {
-						var str = valueOfV.Index(i).String()
-						if !utf8.ValidString(str) {
-							return "", ErrNotUTF8
-						}
-						stringSlice = append(stringSlice, escapeAndQuoteString(str))
-					}
-				} else {
-					return "", ErrInvalidSliceValue
-				}
-				buf.WriteRune('(')
-				buf.WriteString(strings.Join(stringSlice, ","))
-				buf.WriteRune(')')
-			} else {
-				return "", ErrInvalidValue
-			}
-
 			curVal++
+		case r == '`', r == '\'', r == '"':
+			p := strings.IndexRune(sql[pos:], r)
+			if p == -1 {
+				return "", ErrInvalidSyntax
+			}
+			if r == '"' {
+				r = '\''
+			}
+			buf.WriteRune(r)
+			buf.WriteString(sql[pos : pos+p])
+			buf.WriteRune(r)
+			pos += p + 1
 		case r == '[':
 			w := strings.IndexRune(sql[pos:], ']')
 			col := sql[pos : pos+w]
-			Quoter.writeQuotedColumn(col, &buf)
+			Quoter.writeQuotedColumn(col, buf)
 			pos += w + 1 // size of ']'
 		case r != '?':
 			buf.WriteRune(r)
@@ -199,4 +125,94 @@ func Interpolate(sql string, vals []interface{}) (string, error) {
 	}
 
 	return buf.String(), nil
+}
+
+func interpolate(buf *bytes.Buffer, v interface{}) error {
+	valuer, ok := v.(driver.Valuer)
+	if ok {
+		val, err := valuer.Value()
+		if err != nil {
+			return err
+		}
+		v = val
+	}
+
+	valueOfV := reflect.ValueOf(v)
+	kindOfV := valueOfV.Kind()
+
+	if v == nil {
+		buf.WriteString("NULL")
+	} else if isInt(kindOfV) {
+		var ival = valueOfV.Int()
+
+		buf.WriteString(strconv.FormatInt(ival, 10))
+	} else if isUint(kindOfV) {
+		var uival = valueOfV.Uint()
+
+		buf.WriteString(strconv.FormatUint(uival, 10))
+	} else if kindOfV == reflect.String {
+		var str = valueOfV.String()
+
+		if !utf8.ValidString(str) {
+			return ErrNotUTF8
+		}
+
+		buf.WriteString(escapeAndQuoteString(str))
+	} else if isFloat(kindOfV) {
+		var fval = valueOfV.Float()
+
+		buf.WriteString(strconv.FormatFloat(fval, 'f', -1, 64))
+	} else if kindOfV == reflect.Bool {
+		var bval = valueOfV.Bool()
+
+		if bval {
+			buf.WriteRune('1')
+		} else {
+			buf.WriteRune('0')
+		}
+	} else if kindOfV == reflect.Struct {
+		if typeOfV := valueOfV.Type(); typeOfV == typeOfTime {
+			t := valueOfV.Interface().(time.Time)
+			buf.WriteString(escapeAndQuoteString(t.UTC().Format(timeFormat)))
+		} else {
+			return ErrInvalidValue
+		}
+	} else if kindOfV == reflect.Slice {
+		typeOfV := reflect.TypeOf(v)
+		subtype := typeOfV.Elem()
+		kindOfSubtype := subtype.Kind()
+
+		sliceLen := valueOfV.Len()
+		stringSlice := make([]string, 0, sliceLen)
+
+		if sliceLen == 0 {
+			return ErrInvalidSliceLength
+		} else if isInt(kindOfSubtype) {
+			for i := 0; i < sliceLen; i++ {
+				var ival = valueOfV.Index(i).Int()
+				stringSlice = append(stringSlice, strconv.FormatInt(ival, 10))
+			}
+		} else if isUint(kindOfSubtype) {
+			for i := 0; i < sliceLen; i++ {
+				var uival = valueOfV.Index(i).Uint()
+				stringSlice = append(stringSlice, strconv.FormatUint(uival, 10))
+			}
+		} else if kindOfSubtype == reflect.String {
+			for i := 0; i < sliceLen; i++ {
+				var str = valueOfV.Index(i).String()
+				if !utf8.ValidString(str) {
+					return ErrNotUTF8
+				}
+				stringSlice = append(stringSlice, escapeAndQuoteString(str))
+			}
+		} else {
+			return ErrInvalidSliceValue
+		}
+		buf.WriteRune('(')
+		buf.WriteString(strings.Join(stringSlice, ","))
+		buf.WriteRune(')')
+	} else {
+		return ErrInvalidValue
+	}
+	return nil
 }

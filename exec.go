@@ -6,7 +6,7 @@ import (
 )
 
 func exec(db runner, b sqlBuilder, r EventReceiver, logAction string) (sql.Result, error) {
-	fullSql, err := Interpolate(b.ToSql())
+	fullSql, err := Preprocess(b.ToSql())
 	if err != nil {
 		return nil, r.EventErrKv("ql."+logAction+".exec.interpolate", err, kvs{"sql": fullSql})
 	}

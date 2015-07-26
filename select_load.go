@@ -75,7 +75,7 @@ func (l loader) One(dest interface{}) error {
 // dest must be a pointer to a slice of pointers to structs. It returns the number of items
 // found (which is not necessarily the number of items set).
 func (l loader) loadStructs(dest interface{}, valueOfDest reflect.Value, elemType reflect.Type) (int, error) {
-	fullSql, err := Interpolate(l.builder.ToSql())
+	fullSql, err := Preprocess(l.builder.ToSql())
 	if err != nil {
 		return 0, l.EventErr("dbr.select.load_all.interpolate", err)
 	}
@@ -141,7 +141,7 @@ func (l loader) loadStructs(dest interface{}, valueOfDest reflect.Value, elemTyp
 // loadStruct executes the query and loads the resulting data into a struct,
 // dest must be a pointer to a struct. Returns ErrNotFound if nothing was found.
 func (l loader) loadStruct(dest interface{}, valueOfDest reflect.Value) error {
-	fullSql, err := Interpolate(l.builder.ToSql())
+	fullSql, err := Preprocess(l.builder.ToSql())
 	if err != nil {
 		return err
 	}
@@ -195,7 +195,7 @@ func (l loader) loadStruct(dest interface{}, valueOfDest reflect.Value) error {
 // loadValues executes the query and loads the resulting data into a slice of
 // primitive values. Returns ErrNotFound if no value was found, and it was therefore not set.
 func (l loader) loadValues(dest interface{}, valueOfDest reflect.Value, elemType reflect.Type) (int, error) {
-	fullSql, err := Interpolate(l.builder.ToSql())
+	fullSql, err := Preprocess(l.builder.ToSql())
 	if err != nil {
 		return 0, err
 	}
@@ -239,7 +239,7 @@ func (l loader) loadValues(dest interface{}, valueOfDest reflect.Value, elemType
 // loadValue executes the query and loads the resulting data into a primitive value.
 // Returns ErrNotFound if no value was found, and it was therefore not set.
 func (l loader) loadValue(dest interface{}) error {
-	fullSql, err := Interpolate(l.builder.ToSql())
+	fullSql, err := Preprocess(l.builder.ToSql())
 	if err != nil {
 		return err
 	}

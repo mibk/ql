@@ -69,15 +69,24 @@ func TestInterpolate(t *testing.T) {
 
 		{"SELECT * FROM x WHERE a = ?", []interface{}{[]struct{}{struct{}{}, struct{}{}}},
 			"", ErrInvalidSliceValue},
+		{"SELECT 'hello", noArgs, "", ErrInvalidSyntax},
+		{`SELECT "hello`, noArgs, "", ErrInvalidSyntax},
 
-		// quoting
+		// preprocessing
+		{"SELECT '?'", noArgs, "SELECT '?'", nil},
+		{"SELECT `?`", noArgs, "SELECT `?`", nil},
+		{"SELECT [?]", noArgs, "SELECT `?`", nil},
 		{"SELECT [name] FROM [user]", noArgs, "SELECT `name` FROM `user`", nil},
 		{"SELECT [u.name] FROM [user] [u]", noArgs, "SELECT `u`.`name` FROM `user` `u`", nil},
 		{"SELECT [u.na`me] FROM [user] [u]", noArgs, "SELECT `u`.`na``me` FROM `user` `u`", nil},
+		{"SELECT * FROM [user] WHERE [name] = '[nick]'", noArgs,
+			"SELECT * FROM `user` WHERE `name` = '[nick]'", nil},
+		{`SELECT * FROM [user] WHERE [name] = "nick[]"`, noArgs,
+			"SELECT * FROM `user` WHERE `name` = 'nick[]'", nil},
 	}
 
 	for _, test := range tests {
-		str, err := Interpolate(test.sql, test.args)
+		str, err := Preprocess(test.sql, test.args)
 		if err != test.expErr {
 			t.Errorf("\ngot error: %v\nwant: %v", err, test.expErr)
 		}

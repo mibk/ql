@@ -5,7 +5,7 @@ type sqlBuilder interface {
 }
 
 func makeSql(b sqlBuilder) string {
-	sql, err := Interpolate(b.ToSql())
+	sql, err := Preprocess(b.ToSql())
 	if err != nil {
 		panic(err)
 	}
