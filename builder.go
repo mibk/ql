@@ -1,9 +1,6 @@
 package ql
 
-import (
-	"bytes"
-	"fmt"
-)
+import "fmt"
 
 type direction bool
 
@@ -57,32 +54,32 @@ func (b *builder) offset(v uint64) {
 	b.OffsetValid = true
 }
 
-func (b *builder) buildWhere(sql *bytes.Buffer, args *[]interface{}) {
+func (b *builder) buildWhere(w queryWriter, args *[]interface{}) {
 	if len(b.WhereFragments) > 0 {
-		sql.WriteString(" WHERE ")
-		writeWhereFragmentsToSql(b.WhereFragments, sql, args)
+		w.WriteString(" WHERE ")
+		writeWhereFragmentsToSql(b.WhereFragments, w, args)
 	}
 }
 
-func (b *builder) buildOrder(sql *bytes.Buffer) {
+func (b *builder) buildOrder(w queryWriter) {
 	if len(b.OrderBys) > 0 {
-		sql.WriteString(" ORDER BY ")
+		w.WriteString(" ORDER BY ")
 		for i, s := range b.OrderBys {
 			if i > 0 {
-				sql.WriteString(", ")
+				w.WriteString(", ")
 			}
-			sql.WriteString(s)
+			w.WriteString(s)
 		}
 	}
 }
 
-func (b *builder) buildLimitAndOffset(sql *bytes.Buffer) {
+func (b *builder) buildLimitAndOffset(w queryWriter) {
 	if b.LimitValid {
-		sql.WriteString(" LIMIT ")
-		fmt.Fprint(sql, b.LimitCount)
+		w.WriteString(" LIMIT ")
+		fmt.Fprint(w, b.LimitCount)
 	}
 	if b.OffsetValid {
-		sql.WriteString(" OFFSET ")
-		fmt.Fprint(sql, b.OffsetCount)
+		w.WriteString(" OFFSET ")
+		fmt.Fprint(w, b.OffsetCount)
 	}
 }

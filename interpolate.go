@@ -13,7 +13,7 @@ import (
 // Need to turn \x00, \n, \r, \, ', " and \x1a.
 // Returns an escaped, quoted string. eg, "hello 'world'" -> "'hello \'world\''".
 func escapeAndQuoteString(val string) string {
-	buf := bytes.Buffer{}
+	buf := new(bytes.Buffer)
 
 	buf.WriteRune('\'')
 	for _, char := range val {
@@ -127,7 +127,7 @@ func Preprocess(sql string, vals []interface{}) (string, error) {
 	return buf.String(), nil
 }
 
-func interpolate(buf *bytes.Buffer, v interface{}) error {
+func interpolate(w queryWriter, v interface{}) error {
 	valuer, ok := v.(driver.Valuer)
 	if ok {
 		val, err := valuer.Value()
@@ -142,15 +142,15 @@ func interpolate(buf *bytes.Buffer, v interface{}) error {
 
 	switch {
 	case v == nil:
-		buf.WriteString("NULL")
+		w.WriteString("NULL")
 	case isInt(kindOfV):
 		var ival = valueOfV.Int()
 
-		buf.WriteString(strconv.FormatInt(ival, 10))
+		w.WriteString(strconv.FormatInt(ival, 10))
 	case isUint(kindOfV):
 		var uival = valueOfV.Uint()
 
-		buf.WriteString(strconv.FormatUint(uival, 10))
+		w.WriteString(strconv.FormatUint(uival, 10))
 	case kindOfV == reflect.String:
 		var str = valueOfV.String()
 
@@ -158,23 +158,23 @@ func interpolate(buf *bytes.Buffer, v interface{}) error {
 			return ErrNotUTF8
 		}
 
-		buf.WriteString(escapeAndQuoteString(str))
+		w.WriteString(escapeAndQuoteString(str))
 	case isFloat(kindOfV):
 		var fval = valueOfV.Float()
 
-		buf.WriteString(strconv.FormatFloat(fval, 'f', -1, 64))
+		w.WriteString(strconv.FormatFloat(fval, 'f', -1, 64))
 	case kindOfV == reflect.Bool:
 		var bval = valueOfV.Bool()
 
 		if bval {
-			buf.WriteRune('1')
+			w.WriteRune('1')
 		} else {
-			buf.WriteRune('0')
+			w.WriteRune('0')
 		}
 	case kindOfV == reflect.Struct:
 		if typeOfV := valueOfV.Type(); typeOfV == typeOfTime {
 			t := valueOfV.Interface().(time.Time)
-			buf.WriteString(escapeAndQuoteString(t.UTC().Format(timeFormat)))
+			w.WriteString(escapeAndQuoteString(t.UTC().Format(timeFormat)))
 		} else {
 			return ErrInvalidValue
 		}
@@ -210,9 +210,9 @@ func interpolate(buf *bytes.Buffer, v interface{}) error {
 		default:
 			return ErrInvalidSliceValue
 		}
-		buf.WriteRune('(')
-		buf.WriteString(strings.Join(stringSlice, ","))
-		buf.WriteRune(')')
+		w.WriteRune('(')
+		w.WriteString(strings.Join(stringSlice, ","))
+		w.WriteRune(')')
 	default:
 		return ErrInvalidValue
 	}

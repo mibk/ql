@@ -81,7 +81,7 @@ func (b *InsertBuilder) ToSql() (string, []interface{}) {
 		panic("no values or records specified")
 	}
 
-	var sql bytes.Buffer
+	sql := new(bytes.Buffer)
 	var placeholder bytes.Buffer // Build the placeholder like "(?,?,?)"
 	var args []interface{}
 
@@ -96,7 +96,7 @@ func (b *InsertBuilder) ToSql() (string, []interface{}) {
 			sql.WriteRune(',')
 			placeholder.WriteRune(',')
 		}
-		Quoter.writeQuotedColumn(c, &sql)
+		Quoter.writeQuotedColumn(c, sql)
 		placeholder.WriteRune('?')
 	}
 	sql.WriteString(") VALUES ")

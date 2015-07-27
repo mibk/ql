@@ -1,9 +1,6 @@
 package ql
 
-import (
-	"bytes"
-	"reflect"
-)
+import "reflect"
 
 // Eq is a map column -> value pairs which must be matched in a query.
 type Eq map[string]interface{}
@@ -30,33 +27,33 @@ func newWhereFragment(whereSqlOrMap interface{}, args []interface{}) *whereFragm
 }
 
 // Invariant: only called when len(fragments) > 0.
-func writeWhereFragmentsToSql(fragments []*whereFragment, sql *bytes.Buffer, args *[]interface{}) {
+func writeWhereFragmentsToSql(fragments []*whereFragment, w queryWriter, args *[]interface{}) {
 	anyConditions := false
 	for _, f := range fragments {
 		if f.Condition != "" {
 			if anyConditions {
-				sql.WriteString(" AND (")
+				w.WriteString(" AND (")
 			} else {
-				sql.WriteRune('(')
+				w.WriteRune('(')
 				anyConditions = true
 			}
-			sql.WriteString(f.Condition)
-			sql.WriteRune(')')
+			w.WriteString(f.Condition)
+			w.WriteRune(')')
 			if len(f.Values) > 0 {
 				*args = append(*args, f.Values...)
 			}
 		} else if f.EqualityMap != nil {
-			anyConditions = writeEqualityMapToSql(f.EqualityMap, sql, args, anyConditions)
+			anyConditions = writeEqualityMapToSql(f.EqualityMap, w, args, anyConditions)
 		} else {
 			panic("invalid equality map")
 		}
 	}
 }
 
-func writeEqualityMapToSql(eq map[string]interface{}, sql *bytes.Buffer, args *[]interface{}, anyConditions bool) bool {
+func writeEqualityMapToSql(eq map[string]interface{}, w queryWriter, args *[]interface{}, anyConditions bool) bool {
 	for k, v := range eq {
 		if v == nil {
-			anyConditions = writeWhereCondition(sql, k, " IS NULL", anyConditions)
+			anyConditions = writeWhereCondition(w, k, " IS NULL", anyConditions)
 		} else {
 			vVal := reflect.ValueOf(v)
 
@@ -64,23 +61,23 @@ func writeEqualityMapToSql(eq map[string]interface{}, sql *bytes.Buffer, args *[
 				vValLen := vVal.Len()
 				if vValLen == 0 {
 					if vVal.IsNil() {
-						anyConditions = writeWhereCondition(sql, k, " IS NULL", anyConditions)
+						anyConditions = writeWhereCondition(w, k, " IS NULL", anyConditions)
 					} else {
 						if anyConditions {
-							sql.WriteString(" AND (1=0)")
+							w.WriteString(" AND (1=0)")
 						} else {
-							sql.WriteString("(1=0)")
+							w.WriteString("(1=0)")
 						}
 					}
 				} else if vValLen == 1 {
-					anyConditions = writeWhereCondition(sql, k, " = ?", anyConditions)
+					anyConditions = writeWhereCondition(w, k, " = ?", anyConditions)
 					*args = append(*args, vVal.Index(0).Interface())
 				} else {
-					anyConditions = writeWhereCondition(sql, k, " IN ?", anyConditions)
+					anyConditions = writeWhereCondition(w, k, " IN ?", anyConditions)
 					*args = append(*args, v)
 				}
 			} else {
-				anyConditions = writeWhereCondition(sql, k, " = ?", anyConditions)
+				anyConditions = writeWhereCondition(w, k, " = ?", anyConditions)
 				*args = append(*args, v)
 			}
 		}
@@ -89,16 +86,16 @@ func writeEqualityMapToSql(eq map[string]interface{}, sql *bytes.Buffer, args *[
 	return anyConditions
 }
 
-func writeWhereCondition(sql *bytes.Buffer, k string, pred string, anyConditions bool) bool {
+func writeWhereCondition(w queryWriter, k string, pred string, anyConditions bool) bool {
 	if anyConditions {
-		sql.WriteString(" AND (")
+		w.WriteString(" AND (")
 	} else {
-		sql.WriteRune('(')
+		w.WriteRune('(')
 		anyConditions = true
 	}
-	Quoter.writeQuotedColumn(k, sql)
-	sql.WriteString(pred)
-	sql.WriteRune(')')
+	Quoter.writeQuotedColumn(k, w)
+	w.WriteString(pred)
+	w.WriteRune(')')
 
 	return anyConditions
 }
