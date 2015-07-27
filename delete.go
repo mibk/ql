@@ -10,10 +10,9 @@ type DeleteBuilder struct {
 	*builder
 }
 
-// DeleteFrom creates a new DeleteBuilder for the given table.
-func (db *Connection) DeleteFrom(from string) *DeleteBuilder {
+func newDeleteBuilder(e EventReceiver, r runner, from string) *DeleteBuilder {
 	b := &DeleteBuilder{
-		executor: executor{EventReceiver: db, runner: db.DB},
+		executor: executor{EventReceiver: e, runner: r},
 		From:     from,
 		builder:  new(builder),
 	}
@@ -21,16 +20,15 @@ func (db *Connection) DeleteFrom(from string) *DeleteBuilder {
 	return b
 }
 
+// DeleteFrom creates a new DeleteBuilder for the given table.
+func (db *Connection) DeleteFrom(from string) *DeleteBuilder {
+	return newDeleteBuilder(db, db.DB, from)
+}
+
 // DeleteFrom creates a new DeleteBuilder for the given table in the context for
 // a transaction.
 func (tx *Tx) DeleteFrom(from string) *DeleteBuilder {
-	b := &DeleteBuilder{
-		executor: executor{EventReceiver: tx.Connection, runner: tx.Tx},
-		From:     from,
-		builder:  new(builder),
-	}
-	b.executor.builder = b
-	return b
+	return newDeleteBuilder(tx.Connection, tx.Tx, from)
 }
 
 // Where appends a WHERE clause to the statement whereSqlOrMap can be a string or map.

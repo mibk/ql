@@ -15,24 +15,23 @@ type InsertBuilder struct {
 	Recs []interface{}
 }
 
-// InsertInto instantiates a InsertBuilder for the given table.
-func (db *Connection) InsertInto(into string) *InsertBuilder {
+func newInsertBuilder(e EventReceiver, r runner, into string) *InsertBuilder {
 	b := &InsertBuilder{
-		executor: executor{EventReceiver: db, runner: db.DB},
+		executor: executor{EventReceiver: e, runner: r},
 		Into:     into,
 	}
 	b.executor.builder = b
 	return b
 }
 
+// InsertInto instantiates a InsertBuilder for the given table.
+func (db *Connection) InsertInto(into string) *InsertBuilder {
+	return newInsertBuilder(db, db.DB, into)
+}
+
 // InsertInto instantiates a InsertBuilder for the given table bound to a transaction.
 func (tx *Tx) InsertInto(into string) *InsertBuilder {
-	b := &InsertBuilder{
-		executor: executor{EventReceiver: tx.Connection, runner: tx.Tx},
-		Into:     into,
-	}
-	b.executor.builder = b
-	return b
+	return newInsertBuilder(tx.Connection, tx.Tx, into)
 }
 
 // Columns appends columns to insert in the statement.

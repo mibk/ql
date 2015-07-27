@@ -15,10 +15,9 @@ type SelectBuilder struct {
 	*builder
 }
 
-// Select creates a new SelectBuilder that select that given columns.
-func (db *Connection) Select(cols ...string) *SelectBuilder {
+func newSelectBuilder(e EventReceiver, r runner, cols ...string) *SelectBuilder {
 	b := &SelectBuilder{
-		loader:  loader{EventReceiver: db, runner: db.DB},
+		loader:  loader{EventReceiver: e, runner: r},
 		Columns: cols,
 		builder: new(builder),
 	}
@@ -26,15 +25,14 @@ func (db *Connection) Select(cols ...string) *SelectBuilder {
 	return b
 }
 
+// Select creates a new SelectBuilder that select that given columns.
+func (db *Connection) Select(cols ...string) *SelectBuilder {
+	return newSelectBuilder(db, db.DB, cols...)
+}
+
 // Select creates a new SelectBuilder that select that given columns bound to the transaction.
 func (tx *Tx) Select(cols ...string) *SelectBuilder {
-	b := &SelectBuilder{
-		loader:  loader{EventReceiver: tx.Connection, runner: tx.Tx},
-		Columns: cols,
-		builder: new(builder),
-	}
-	b.loader.builder = b
-	return b
+	return newSelectBuilder(tx.Connection, tx.Tx, cols...)
 }
 
 // Distinct marks the statement as a DISTINCT SELECT.

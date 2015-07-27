@@ -16,10 +16,9 @@ type setClause struct {
 	value  interface{}
 }
 
-// Update creates a new UpdateBuilder for the given table.
-func (db *Connection) Update(table string) *UpdateBuilder {
+func newUpdateBuilder(e EventReceiver, r runner, table string) *UpdateBuilder {
 	b := &UpdateBuilder{
-		executor: executor{EventReceiver: db, runner: db.DB},
+		executor: executor{EventReceiver: e, runner: r},
 		Table:    table,
 		builder:  new(builder),
 	}
@@ -27,15 +26,14 @@ func (db *Connection) Update(table string) *UpdateBuilder {
 	return b
 }
 
+// Update creates a new UpdateBuilder for the given table.
+func (db *Connection) Update(table string) *UpdateBuilder {
+	return newUpdateBuilder(db, db.DB, table)
+}
+
 // Update creates a new UpdateBuilder for the given table bound to a transaction.
 func (tx *Tx) Update(table string) *UpdateBuilder {
-	b := &UpdateBuilder{
-		executor: executor{EventReceiver: tx.Connection, runner: tx.Tx},
-		Table:    table,
-		builder:  new(builder),
-	}
-	b.executor.builder = b
-	return b
+	return newUpdateBuilder(tx.Connection, tx.Tx, table)
 }
 
 // Set appends a column/value pair for the statement.
