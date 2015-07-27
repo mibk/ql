@@ -21,7 +21,7 @@ type InsertBuilder struct {
 func (db *Connection) InsertInto(into string) *InsertBuilder {
 	return &InsertBuilder{
 		Connection: db,
-		runner:     db.Db,
+		runner:     db.DB,
 		Into:       into,
 	}
 }

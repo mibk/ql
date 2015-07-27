@@ -12,7 +12,7 @@ type Tx struct {
 
 // Begin creates a transaction for the given connection.
 func (db *Connection) Begin() (*Tx, error) {
-	tx, err := db.Db.Begin()
+	tx, err := db.DB.Begin()
 	if err != nil {
 		return nil, db.EventErr("dbr.begin.error", err)
 	} else {

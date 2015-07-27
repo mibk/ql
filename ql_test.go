@@ -20,7 +20,7 @@ func createRealConnection() *Connection {
 
 func createRealConnectionWithFixtures() *Connection {
 	db := createRealConnection()
-	installFixtures(db.Db)
+	installFixtures(db.DB)
 	return db
 }
 

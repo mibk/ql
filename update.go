@@ -24,7 +24,7 @@ type setClause struct {
 func (db *Connection) Update(table string) *UpdateBuilder {
 	return &UpdateBuilder{
 		Connection: db,
-		runner:     db.Db,
+		runner:     db.DB,
 		Table:      table,
 		builder:    new(builder),
 	}

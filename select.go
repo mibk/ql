@@ -18,7 +18,7 @@ type SelectBuilder struct {
 // Select creates a new SelectBuilder that select that given columns.
 func (db *Connection) Select(cols ...string) *SelectBuilder {
 	b := &SelectBuilder{
-		loader:  loader{Connection: db, runner: db.Db},
+		loader:  loader{Connection: db, runner: db.DB},
 		Columns: cols,
 		builder: new(builder),
 	}

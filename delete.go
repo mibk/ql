@@ -18,7 +18,7 @@ type DeleteBuilder struct {
 func (db *Connection) DeleteFrom(from string) *DeleteBuilder {
 	return &DeleteBuilder{
 		Connection: db,
-		runner:     db.Db,
+		runner:     db.DB,
 		From:       from,
 		builder:    new(builder),
 	}
