@@ -26,17 +26,6 @@ func (c *Connection) Close() error {
 	return c.DB.Close()
 }
 
-// SessionRunner can do anything that a Session can except start a transaction.
-type SessionRunner interface {
-	Select(cols ...string) *SelectBuilder
-	SelectBySql(sql string, args ...interface{}) *SelectBuilder
-
-	InsertInto(into string) *InsertBuilder
-	Update(table string) *UpdateBuilder
-	UpdateBySql(sql string, args ...interface{}) *UpdateBuilder
-	DeleteFrom(from string) *DeleteBuilder
-}
-
 type runner interface {
 	Exec(query string, args ...interface{}) (sql.Result, error)
 	Query(query string, args ...interface{}) (*sql.Rows, error)
