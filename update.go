@@ -8,7 +8,7 @@ type UpdateBuilder struct {
 
 	Table      string
 	SetClauses []*setClause
-	*builder
+	*baseBuilder
 }
 
 type setClause struct {
@@ -18,9 +18,9 @@ type setClause struct {
 
 func newUpdateBuilder(e EventReceiver, r runner, table string) *UpdateBuilder {
 	b := &UpdateBuilder{
-		executor: executor{EventReceiver: e, runner: r},
-		Table:    table,
-		builder:  new(builder),
+		executor:    executor{EventReceiver: e, runner: r},
+		Table:       table,
+		baseBuilder: new(baseBuilder),
 	}
 	b.executor.builder = b
 	return b

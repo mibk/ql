@@ -7,14 +7,14 @@ type DeleteBuilder struct {
 	executor
 
 	From string
-	*builder
+	*baseBuilder
 }
 
 func newDeleteBuilder(e EventReceiver, r runner, from string) *DeleteBuilder {
 	b := &DeleteBuilder{
-		executor: executor{EventReceiver: e, runner: r},
-		From:     from,
-		builder:  new(builder),
+		executor:    executor{EventReceiver: e, runner: r},
+		From:        from,
+		baseBuilder: new(baseBuilder),
 	}
 	b.executor.builder = b
 	return b

@@ -12,14 +12,14 @@ type SelectBuilder struct {
 	FromTable       string
 	GroupBys        []string
 	HavingFragments []*whereFragment
-	*builder
+	*baseBuilder
 }
 
 func newSelectBuilder(e EventReceiver, r runner, cols ...string) *SelectBuilder {
 	b := &SelectBuilder{
-		loader:  loader{EventReceiver: e, runner: r},
-		Columns: cols,
-		builder: new(builder),
+		loader:      loader{EventReceiver: e, runner: r},
+		Columns:     cols,
+		baseBuilder: new(baseBuilder),
 	}
 	b.loader.builder = b
 	return b
