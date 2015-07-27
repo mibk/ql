@@ -2,14 +2,12 @@ package ql
 
 import (
 	"bytes"
-	"database/sql"
 	"reflect"
 )
 
 // InsertBuilder contains the clauses for an INSERT statement.
 type InsertBuilder struct {
-	*Connection
-	runner
+	executor
 
 	Into string
 	Cols []string
@@ -19,20 +17,22 @@ type InsertBuilder struct {
 
 // InsertInto instantiates a InsertBuilder for the given table.
 func (db *Connection) InsertInto(into string) *InsertBuilder {
-	return &InsertBuilder{
-		Connection: db,
-		runner:     db.DB,
-		Into:       into,
+	b := &InsertBuilder{
+		executor: executor{Connection: db, runner: db.DB},
+		Into:     into,
 	}
+	b.executor.builder = b
+	return b
 }
 
 // InsertInto instantiates a InsertBuilder for the given table bound to a transaction.
 func (tx *Tx) InsertInto(into string) *InsertBuilder {
-	return &InsertBuilder{
-		Connection: tx.Connection,
-		runner:     tx.Tx,
-		Into:       into,
+	b := &InsertBuilder{
+		executor: executor{Connection: tx.Connection, runner: tx.Tx},
+		Into:     into,
 	}
+	b.executor.builder = b
+	return b
 }
 
 // Columns appends columns to insert in the statement.
@@ -134,10 +134,4 @@ func (b *InsertBuilder) ToSql() (string, []interface{}) {
 	}
 
 	return sql.String(), args
-}
-
-// Exec executes the statement represented by the InsertBuilder. It returns the raw
-// database/sql Result and an error if there was one.
-func (b *InsertBuilder) Exec() (sql.Result, error) {
-	return exec(b.runner, b, b, "insert")
 }

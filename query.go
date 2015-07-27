@@ -1,10 +1,8 @@
 package ql
 
-import "database/sql"
-
 type Query struct {
-	// methods for loading structs and values
-	loader
+	loader // methods for loading structs and values
+	executor
 
 	rawSql string
 	args   []interface{}
@@ -13,20 +11,17 @@ type Query struct {
 // Query creates Query by the raw SQL query and args.
 func (db *Connection) Query(sql string, args ...interface{}) *Query {
 	q := &Query{
-		loader: loader{Connection: db, runner: db.DB},
-		rawSql: sql,
-		args:   args,
+		loader:   loader{Connection: db, runner: db.DB},
+		executor: executor{Connection: db, runner: db.DB},
+		rawSql:   sql,
+		args:     args,
 	}
 	q.loader.builder = q
+	q.executor.builder = q
 	return q
 }
 
 // ToSql returns the raw SQL query and args.
 func (q *Query) ToSql() (string, []interface{}) {
 	return q.rawSql, q.args
-}
-
-// Exec executes the query.
-func (q *Query) Exec() (sql.Result, error) {
-	return exec(q.runner, q, q, "query")
 }

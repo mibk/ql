@@ -5,21 +5,38 @@ import (
 	"time"
 )
 
-func exec(db runner, b queryBuilder, r EventReceiver, logAction string) (sql.Result, error) {
-	fullSql, err := Preprocess(b.ToSql())
+type executor struct {
+	*Connection
+	runner
+	builder queryBuilder
+}
+
+// Exec executes the query. It returns the raw database/sql Result and an error if there
+// is one.
+func (e executor) Exec() (sql.Result, error) {
+	fullSql, err := Preprocess(e.builder.ToSql())
 	if err != nil {
-		return nil, r.EventErrKv("ql."+logAction+".exec.interpolate", err, kvs{"sql": fullSql})
+		return nil, e.EventErrKv("ql.exec.interpolate", err, kvs{"sql": fullSql})
 	}
 
 	startTime := time.Now()
 	defer func() {
-		r.TimingKv("ql."+logAction, time.Since(startTime).Nanoseconds(), kvs{"sql": fullSql})
+		e.TimingKv("ql.exec", time.Since(startTime).Nanoseconds(), kvs{"sql": fullSql})
 	}()
 
-	result, err := db.Exec(fullSql)
+	result, err := e.runner.Exec(fullSql)
 	if err != nil {
-		return result, r.EventErrKv("ql."+logAction+".exec.exec", err, kvs{"sql": fullSql})
+		return result, e.EventErrKv("ql.exec.exec", err, kvs{"sql": fullSql})
 	}
 
 	return result, nil
+}
+
+// MustExec is like Exec but panics on error.
+func (e executor) MustExec() sql.Result {
+	res, err := e.Exec()
+	if err != nil {
+		panic(err)
+	}
+	return res
 }

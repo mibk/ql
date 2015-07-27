@@ -1,14 +1,10 @@
 package ql
 
-import (
-	"bytes"
-	"database/sql"
-)
+import "bytes"
 
 // DeleteBuilder contains the clauses for a DELETE statement.
 type DeleteBuilder struct {
-	*Connection
-	runner
+	executor
 
 	From string
 	*builder
@@ -16,23 +12,25 @@ type DeleteBuilder struct {
 
 // DeleteFrom creates a new DeleteBuilder for the given table.
 func (db *Connection) DeleteFrom(from string) *DeleteBuilder {
-	return &DeleteBuilder{
-		Connection: db,
-		runner:     db.DB,
-		From:       from,
-		builder:    new(builder),
+	b := &DeleteBuilder{
+		executor: executor{Connection: db, runner: db.DB},
+		From:     from,
+		builder:  new(builder),
 	}
+	b.executor.builder = b
+	return b
 }
 
 // DeleteFrom creates a new DeleteBuilder for the given table in the context for
 // a transaction.
 func (tx *Tx) DeleteFrom(from string) *DeleteBuilder {
-	return &DeleteBuilder{
-		Connection: tx.Connection,
-		runner:     tx.Tx,
-		From:       from,
-		builder:    new(builder),
+	b := &DeleteBuilder{
+		executor: executor{Connection: tx.Connection, runner: tx.Tx},
+		From:     from,
+		builder:  new(builder),
 	}
+	b.executor.builder = b
+	return b
 }
 
 // Where appends a WHERE clause to the statement whereSqlOrMap can be a string or map.
@@ -84,10 +82,4 @@ func (b *DeleteBuilder) ToSql() (string, []interface{}) {
 	b.buildLimitAndOffset(sql)
 
 	return sql.String(), args
-}
-
-// Exec executes the statement represented by the DeleteBuilder. It returns the raw
-// database/sql Result and an error if there was one.
-func (b *DeleteBuilder) Exec() (sql.Result, error) {
-	return exec(b.runner, b, b, "delete")
 }

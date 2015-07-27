@@ -1,14 +1,10 @@
 package ql
 
-import (
-	"bytes"
-	"database/sql"
-)
+import "bytes"
 
 // UpdateBuilder contains the clauses for an UPDATE statement.
 type UpdateBuilder struct {
-	*Connection
-	runner
+	executor
 
 	Table      string
 	SetClauses []*setClause
@@ -22,22 +18,24 @@ type setClause struct {
 
 // Update creates a new UpdateBuilder for the given table.
 func (db *Connection) Update(table string) *UpdateBuilder {
-	return &UpdateBuilder{
-		Connection: db,
-		runner:     db.DB,
-		Table:      table,
-		builder:    new(builder),
+	b := &UpdateBuilder{
+		executor: executor{Connection: db, runner: db.DB},
+		Table:    table,
+		builder:  new(builder),
 	}
+	b.executor.builder = b
+	return b
 }
 
 // Update creates a new UpdateBuilder for the given table bound to a transaction.
 func (tx *Tx) Update(table string) *UpdateBuilder {
-	return &UpdateBuilder{
-		Connection: tx.Connection,
-		runner:     tx.Tx,
-		Table:      table,
-		builder:    new(builder),
+	b := &UpdateBuilder{
+		executor: executor{Connection: tx.Connection, runner: tx.Tx},
+		Table:    table,
+		builder:  new(builder),
 	}
+	b.executor.builder = b
+	return b
 }
 
 // Set appends a column/value pair for the statement.
@@ -122,10 +120,4 @@ func (b *UpdateBuilder) ToSql() (string, []interface{}) {
 	b.buildLimitAndOffset(sql)
 
 	return sql.String(), args
-}
-
-// Exec executes the statement represented by the UpdateBuilder. It returns the raw
-// database/sql Result and an error if there was one.
-func (b *UpdateBuilder) Exec() (sql.Result, error) {
-	return exec(b.runner, b, b, "update")
 }
