@@ -21,16 +21,6 @@ func NewConnection(db *sql.DB, log EventReceiver) *Connection {
 	return &Connection{DB: db, EventReceiver: log}
 }
 
-// Close closes the database, releasing any open resources.
-func (c *Connection) Close() error {
-	return c.DB.Close()
-}
-
-type runner interface {
-	Exec(query string, args ...interface{}) (sql.Result, error)
-	Query(query string, args ...interface{}) (*sql.Rows, error)
-}
-
 // Open opens a database by calling sql.Open. It returns new Connection with
 // nil EventReceiver.
 func Open(driverName, dataSourceName string) (*Connection, error) {
@@ -48,4 +38,29 @@ func MustOpen(driverName, dataSourceName string) *Connection {
 		panic(err)
 	}
 	return conn
+}
+
+// MustOpenAndVerify is like MustOpen but it verifies the connection and panics
+// on error.
+func MustOpenAndVerify(driverName, dataSourceName string) *Connection {
+	conn := MustOpen(driverName, dataSourceName)
+	if err := conn.Ping(); err != nil {
+		panic(err)
+	}
+	return conn
+}
+
+// Close closes the database, releasing any open resources.
+func (c *Connection) Close() error {
+	return c.DB.Close()
+}
+
+// Ping verifies a connection to the database is still alive, establishing a connection if necessary.
+func (c *Connection) Ping() error {
+	return c.DB.Ping()
+}
+
+type runner interface {
+	Exec(query string, args ...interface{}) (sql.Result, error)
+	Query(query string, args ...interface{}) (*sql.Rows, error)
 }
