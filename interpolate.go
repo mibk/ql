@@ -140,17 +140,18 @@ func interpolate(buf *bytes.Buffer, v interface{}) error {
 	valueOfV := reflect.ValueOf(v)
 	kindOfV := valueOfV.Kind()
 
-	if v == nil {
+	switch {
+	case v == nil:
 		buf.WriteString("NULL")
-	} else if isInt(kindOfV) {
+	case isInt(kindOfV):
 		var ival = valueOfV.Int()
 
 		buf.WriteString(strconv.FormatInt(ival, 10))
-	} else if isUint(kindOfV) {
+	case isUint(kindOfV):
 		var uival = valueOfV.Uint()
 
 		buf.WriteString(strconv.FormatUint(uival, 10))
-	} else if kindOfV == reflect.String {
+	case kindOfV == reflect.String:
 		var str = valueOfV.String()
 
 		if !utf8.ValidString(str) {
@@ -158,11 +159,11 @@ func interpolate(buf *bytes.Buffer, v interface{}) error {
 		}
 
 		buf.WriteString(escapeAndQuoteString(str))
-	} else if isFloat(kindOfV) {
+	case isFloat(kindOfV):
 		var fval = valueOfV.Float()
 
 		buf.WriteString(strconv.FormatFloat(fval, 'f', -1, 64))
-	} else if kindOfV == reflect.Bool {
+	case kindOfV == reflect.Bool:
 		var bval = valueOfV.Bool()
 
 		if bval {
@@ -170,14 +171,14 @@ func interpolate(buf *bytes.Buffer, v interface{}) error {
 		} else {
 			buf.WriteRune('0')
 		}
-	} else if kindOfV == reflect.Struct {
+	case kindOfV == reflect.Struct:
 		if typeOfV := valueOfV.Type(); typeOfV == typeOfTime {
 			t := valueOfV.Interface().(time.Time)
 			buf.WriteString(escapeAndQuoteString(t.UTC().Format(timeFormat)))
 		} else {
 			return ErrInvalidValue
 		}
-	} else if kindOfV == reflect.Slice {
+	case kindOfV == reflect.Slice:
 		typeOfV := reflect.TypeOf(v)
 		subtype := typeOfV.Elem()
 		kindOfSubtype := subtype.Kind()
@@ -185,19 +186,20 @@ func interpolate(buf *bytes.Buffer, v interface{}) error {
 		sliceLen := valueOfV.Len()
 		stringSlice := make([]string, 0, sliceLen)
 
-		if sliceLen == 0 {
+		switch {
+		case sliceLen == 0:
 			return ErrInvalidSliceLength
-		} else if isInt(kindOfSubtype) {
+		case isInt(kindOfSubtype):
 			for i := 0; i < sliceLen; i++ {
 				var ival = valueOfV.Index(i).Int()
 				stringSlice = append(stringSlice, strconv.FormatInt(ival, 10))
 			}
-		} else if isUint(kindOfSubtype) {
+		case isUint(kindOfSubtype):
 			for i := 0; i < sliceLen; i++ {
 				var uival = valueOfV.Index(i).Uint()
 				stringSlice = append(stringSlice, strconv.FormatUint(uival, 10))
 			}
-		} else if kindOfSubtype == reflect.String {
+		case kindOfSubtype == reflect.String:
 			for i := 0; i < sliceLen; i++ {
 				var str = valueOfV.Index(i).String()
 				if !utf8.ValidString(str) {
@@ -205,13 +207,13 @@ func interpolate(buf *bytes.Buffer, v interface{}) error {
 				}
 				stringSlice = append(stringSlice, escapeAndQuoteString(str))
 			}
-		} else {
+		default:
 			return ErrInvalidSliceValue
 		}
 		buf.WriteRune('(')
 		buf.WriteString(strings.Join(stringSlice, ","))
 		buf.WriteRune(')')
-	} else {
+	default:
 		return ErrInvalidValue
 	}
 	return nil
