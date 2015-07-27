@@ -6,7 +6,7 @@ import (
 )
 
 type executor struct {
-	*Connection
+	EventReceiver
 	runner
 	builder queryBuilder
 }

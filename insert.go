@@ -18,7 +18,7 @@ type InsertBuilder struct {
 // InsertInto instantiates a InsertBuilder for the given table.
 func (db *Connection) InsertInto(into string) *InsertBuilder {
 	b := &InsertBuilder{
-		executor: executor{Connection: db, runner: db.DB},
+		executor: executor{EventReceiver: db, runner: db.DB},
 		Into:     into,
 	}
 	b.executor.builder = b
@@ -28,7 +28,7 @@ func (db *Connection) InsertInto(into string) *InsertBuilder {
 // InsertInto instantiates a InsertBuilder for the given table bound to a transaction.
 func (tx *Tx) InsertInto(into string) *InsertBuilder {
 	b := &InsertBuilder{
-		executor: executor{Connection: tx.Connection, runner: tx.Tx},
+		executor: executor{EventReceiver: tx.Connection, runner: tx.Tx},
 		Into:     into,
 	}
 	b.executor.builder = b
@@ -124,7 +124,7 @@ func (b *InsertBuilder) ToSql() (string, []interface{}) {
 		sql.WriteString(placeholderStr)
 
 		ind := reflect.Indirect(reflect.ValueOf(rec))
-		vals, err := b.valuesFor(ind.Type(), ind, b.Cols)
+		vals, err := valuesFor(ind.Type(), ind, b.Cols)
 		if err != nil {
 			panic(err.Error())
 		}

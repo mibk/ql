@@ -14,7 +14,7 @@ type fieldMapQueueElement struct {
 }
 
 // recordType is the type of a structure.
-func (db *Connection) calculateFieldMap(recordType reflect.Type, columns []string, requireAllColumns bool) ([][]int, error) {
+func calculateFieldMap(recordType reflect.Type, columns []string, requireAllColumns bool) ([][]int, error) {
 	// each value is either the slice to get to the field via FieldByIndex(index []int) in the record, or nil if we don't want to map it to the structure.
 	lenColumns := len(columns)
 	fieldMap := make([][]int, lenColumns)
@@ -69,7 +69,7 @@ func (db *Connection) calculateFieldMap(recordType reflect.Type, columns []strin
 	return fieldMap, nil
 }
 
-func (db *Connection) prepareHolderFor(record reflect.Value, fieldMap [][]int, holder []interface{}) ([]interface{}, error) {
+func prepareHolderFor(record reflect.Value, fieldMap [][]int, holder []interface{}) ([]interface{}, error) {
 	// Given a query and given a structure (field list), there's 2 sets of fields.
 	// Take the intersection. We can fill those in. great.
 	// For fields in the structure that aren't in the query, we'll let that slide if db:"-"
@@ -88,8 +88,8 @@ func (db *Connection) prepareHolderFor(record reflect.Value, fieldMap [][]int, h
 	return holder, nil
 }
 
-func (db *Connection) valuesFor(recordType reflect.Type, record reflect.Value, columns []string) ([]interface{}, error) {
-	fieldMap, err := db.calculateFieldMap(recordType, columns, true)
+func valuesFor(recordType reflect.Type, record reflect.Value, columns []string) ([]interface{}, error) {
+	fieldMap, err := calculateFieldMap(recordType, columns, true)
 	if err != nil {
 		fmt.Println("err: calc field map")
 		return nil, err

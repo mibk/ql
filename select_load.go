@@ -13,7 +13,7 @@ import (
 // For fields in the query that aren't in the structure, we'll ignore them.
 
 type loader struct {
-	*Connection
+	EventReceiver
 	runner
 	builder queryBuilder
 }
@@ -96,7 +96,7 @@ func (l loader) loadStructs(dest interface{}, valueOfDest reflect.Value, elemTyp
 		return numberOfRowsReturned, l.EventErrKv("dbr.select.load_one.rows.Columns", err, kvs{"sql": fullSql})
 	}
 
-	fieldMap, err := l.calculateFieldMap(elemType, columns, false)
+	fieldMap, err := calculateFieldMap(elemType, columns, false)
 	if err != nil {
 		return numberOfRowsReturned, l.EventErrKv("dbr.select.load_all.calculateFieldMap", err, kvs{"sql": fullSql})
 	}
@@ -112,7 +112,7 @@ func (l loader) loadStructs(dest interface{}, valueOfDest reflect.Value, elemTyp
 		newRecord := reflect.Indirect(pointerToNewRecord)
 
 		// Prepare the holder for this record
-		scannable, err := l.prepareHolderFor(newRecord, fieldMap, holder)
+		scannable, err := prepareHolderFor(newRecord, fieldMap, holder)
 		if err != nil {
 			return numberOfRowsReturned, l.EventErrKv("dbr.select.load_all.holderFor", err, kvs{"sql": fullSql})
 		}
@@ -162,7 +162,7 @@ func (l loader) loadStruct(dest interface{}, valueOfDest reflect.Value) error {
 		return l.EventErrKv("dbr.select.load_one.rows.Columns", err, kvs{"sql": fullSql})
 	}
 
-	fieldMap, err := l.calculateFieldMap(valueOfDest.Type(), columns, false)
+	fieldMap, err := calculateFieldMap(valueOfDest.Type(), columns, false)
 	if err != nil {
 		return l.EventErrKv("dbr.select.load_one.calculateFieldMap", err, kvs{"sql": fullSql})
 	}
@@ -172,7 +172,7 @@ func (l loader) loadStruct(dest interface{}, valueOfDest reflect.Value) error {
 
 	if rows.Next() {
 		// Build a 'holder', which is an []interface{}. Each value will be the address of the field corresponding to our newly made record:
-		scannable, err := l.prepareHolderFor(valueOfDest, fieldMap, holder)
+		scannable, err := prepareHolderFor(valueOfDest, fieldMap, holder)
 		if err != nil {
 			return l.EventErrKv("dbr.select.load_one.holderFor", err, kvs{"sql": fullSql})
 		}

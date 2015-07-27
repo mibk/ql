@@ -13,7 +13,7 @@ type DeleteBuilder struct {
 // DeleteFrom creates a new DeleteBuilder for the given table.
 func (db *Connection) DeleteFrom(from string) *DeleteBuilder {
 	b := &DeleteBuilder{
-		executor: executor{Connection: db, runner: db.DB},
+		executor: executor{EventReceiver: db, runner: db.DB},
 		From:     from,
 		builder:  new(builder),
 	}
@@ -25,7 +25,7 @@ func (db *Connection) DeleteFrom(from string) *DeleteBuilder {
 // a transaction.
 func (tx *Tx) DeleteFrom(from string) *DeleteBuilder {
 	b := &DeleteBuilder{
-		executor: executor{Connection: tx.Connection, runner: tx.Tx},
+		executor: executor{EventReceiver: tx.Connection, runner: tx.Tx},
 		From:     from,
 		builder:  new(builder),
 	}

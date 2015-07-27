@@ -19,7 +19,7 @@ type setClause struct {
 // Update creates a new UpdateBuilder for the given table.
 func (db *Connection) Update(table string) *UpdateBuilder {
 	b := &UpdateBuilder{
-		executor: executor{Connection: db, runner: db.DB},
+		executor: executor{EventReceiver: db, runner: db.DB},
 		Table:    table,
 		builder:  new(builder),
 	}
@@ -30,7 +30,7 @@ func (db *Connection) Update(table string) *UpdateBuilder {
 // Update creates a new UpdateBuilder for the given table bound to a transaction.
 func (tx *Tx) Update(table string) *UpdateBuilder {
 	b := &UpdateBuilder{
-		executor: executor{Connection: tx.Connection, runner: tx.Tx},
+		executor: executor{EventReceiver: tx.Connection, runner: tx.Tx},
 		Table:    table,
 		builder:  new(builder),
 	}

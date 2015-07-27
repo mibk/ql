@@ -11,8 +11,8 @@ type Query struct {
 // Query creates Query by the raw SQL query and args.
 func (db *Connection) Query(sql string, args ...interface{}) *Query {
 	q := &Query{
-		loader:   loader{Connection: db, runner: db.DB},
-		executor: executor{Connection: db, runner: db.DB},
+		loader:   loader{EventReceiver: db, runner: db.DB},
+		executor: executor{EventReceiver: db, runner: db.DB},
 		rawSql:   sql,
 		args:     args,
 	}
