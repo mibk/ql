@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-func exec(db runner, b sqlBuilder, r EventReceiver, logAction string) (sql.Result, error) {
+func exec(db runner, b queryBuilder, r EventReceiver, logAction string) (sql.Result, error) {
 	fullSql, err := Preprocess(b.ToSql())
 	if err != nil {
 		return nil, r.EventErrKv("ql."+logAction+".exec.interpolate", err, kvs{"sql": fullSql})

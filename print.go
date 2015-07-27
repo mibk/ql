@@ -1,10 +1,10 @@
 package ql
 
-type sqlBuilder interface {
+type queryBuilder interface {
 	ToSql() (string, []interface{})
 }
 
-func makeSql(b sqlBuilder) string {
+func makeSql(b queryBuilder) string {
 	sql, err := Preprocess(b.ToSql())
 	if err != nil {
 		panic(err)

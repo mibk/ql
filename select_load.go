@@ -15,7 +15,7 @@ import (
 type loader struct {
 	*Connection
 	runner
-	builder sqlBuilder
+	builder queryBuilder
 }
 
 // All executes the query and loads the resulting data into the dest, which can be a slice of
