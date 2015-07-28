@@ -6,9 +6,8 @@ import (
 	"log"
 	"os"
 	"testing"
-	"time"
 
-	"github.com/go-sql-driver/mysql"
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/mibk/ql"
 	"github.com/stretchr/testify/assert"
 )
@@ -18,7 +17,6 @@ type nullTypedRecord struct {
 	StringVal  String
 	Int64Val   Int64
 	Float64Val Float64
-	TimeVal    Time
 	BoolVal    Bool
 }
 
@@ -29,7 +27,6 @@ func installFixtures(db *sql.DB) {
 			string_val varchar(255) NULL,
 			int64_val int(11) NULL,
 			float64_val float NULL,
-			time_val datetime NULL,
 			bool_val bool NULL
 		)
 	`
@@ -97,7 +94,8 @@ func TestNullTypeScanning(t *testing.T) {
 
 	for _, test := range tests {
 		// Create the record in the db
-		res, err := s.InsertInto("null_types").Columns("string_val", "int64_val", "float64_val", "time_val", "bool_val").Record(test.record).Exec()
+		res, err := s.InsertInto("null_types").Columns("string_val", "int64_val", "float64_val", "bool_val").
+			Record(test.record).Exec()
 		assert.NoError(t, err)
 		id, err := res.LastInsertId()
 		assert.NoError(t, err)
@@ -115,7 +113,6 @@ func TestNullTypeScanning(t *testing.T) {
 		assert.Equal(t, test.valid, nullTypeSet.StringVal.Valid)
 		assert.Equal(t, test.valid, nullTypeSet.Int64Val.Valid)
 		assert.Equal(t, test.valid, nullTypeSet.Float64Val.Valid)
-		assert.Equal(t, test.valid, nullTypeSet.TimeVal.Valid)
 		assert.Equal(t, test.valid, nullTypeSet.BoolVal.Valid)
 
 		nullTypeSet.StringVal.String = "newStringVal"
@@ -132,11 +129,11 @@ func TestNullTypeJSONMarshal(t *testing.T) {
 	tests := []nullTypeJSONTest{
 		nullTypeJSONTest{
 			record:       &nullTypedRecord{},
-			expectedJSON: []byte(`{"Id":0,"StringVal":null,"Int64Val":null,"Float64Val":null,"TimeVal":null,"BoolVal":null}`),
+			expectedJSON: []byte(`{"Id":0,"StringVal":null,"Int64Val":null,"Float64Val":null,"BoolVal":null}`),
 		},
 		nullTypeJSONTest{
 			record:       newNullTypedRecordWithData(),
-			expectedJSON: []byte(`{"Id":0,"StringVal":"wow","Int64Val":42,"Float64Val":1.618,"TimeVal":"2009-01-03T18:15:05Z","BoolVal":true}`),
+			expectedJSON: []byte(`{"Id":0,"StringVal":"wow","Int64Val":42,"Float64Val":1.618,"BoolVal":true}`),
 		},
 	}
 
@@ -159,7 +156,6 @@ func newNullTypedRecordWithData() *nullTypedRecord {
 		StringVal:  String{sql.NullString{String: "wow", Valid: true}},
 		Int64Val:   Int64{sql.NullInt64{Int64: 42, Valid: true}},
 		Float64Val: Float64{sql.NullFloat64{Float64: 1.618, Valid: true}},
-		TimeVal:    Time{mysql.NullTime{Time: time.Date(2009, 1, 3, 18, 15, 5, 0, time.UTC), Valid: true}},
 		BoolVal:    Bool{sql.NullBool{Bool: true, Valid: true}},
 	}
 }

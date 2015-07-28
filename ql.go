@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"time"
 
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/mibk/ql/dialect"
 	"github.com/mibk/ql/query"
 )

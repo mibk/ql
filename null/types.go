@@ -26,12 +26,8 @@
 package null
 
 import (
-	"bytes"
 	"database/sql"
 	"encoding/json"
-	"time"
-
-	"github.com/go-sql-driver/mysql"
 )
 
 var nullString = []byte("null")
@@ -103,34 +99,6 @@ func (n *Int64) UnmarshalJSON(b []byte) error {
 		return err
 	}
 	return n.Scan(s)
-}
-
-// Time is a type that can be null or a time.
-type Time struct {
-	mysql.NullTime
-}
-
-// MarshalJSON correctly serializes a Time to JSON.
-func (n *Time) MarshalJSON() ([]byte, error) {
-	if n.Valid {
-		j, e := json.Marshal(n.Time)
-		return j, e
-	}
-	return nullString, nil
-}
-
-// UnmarshalJSON correctly deserializes a Time from JSON.
-func (n *Time) UnmarshalJSON(b []byte) error {
-	// scan for null
-	if bytes.Equal(b, nullString) {
-		return n.Scan(nil)
-	}
-	// scan for JSON timestamp
-	var t time.Time
-	if err := json.Unmarshal(b, &t); err != nil {
-		return err
-	}
-	return n.Scan(t)
 }
 
 // Bool is a type that can be null or a bool.
