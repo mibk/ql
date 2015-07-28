@@ -70,18 +70,13 @@ var typeOfTime = reflect.TypeOf(time.Time{})
 // does not match the number of arguments.
 func Preprocess(sql string, vals []interface{}) (string, error) {
 	// Get the number of arguments to add to this query
-	maxVals := len(vals)
-
-	// If our query is blank and has no args return early
-	// Args with a blank query is an error
 	if sql == "" {
-		if maxVals != 0 {
+		if len(vals) != 0 {
 			return "", ErrArgumentMismatch
 		}
 		return "", nil
 	}
 
-	// Iterate over each rune in the sql string and replace with the next arg if it's a place holder
 	curVal := 0
 	buf := new(bytes.Buffer)
 
@@ -91,7 +86,10 @@ func Preprocess(sql string, vals []interface{}) (string, error) {
 		pos += w
 
 		switch {
-		case r == '?' && curVal < maxVals:
+		case r == '?':
+			if curVal >= len(vals) {
+				return "", ErrArgumentMismatch
+			}
 			if err := interpolate(buf, vals[curVal]); err != nil {
 				return "", err
 			}
@@ -113,17 +111,14 @@ func Preprocess(sql string, vals []interface{}) (string, error) {
 			col := sql[pos : pos+w]
 			Quoter.writeQuotedColumn(col, buf)
 			pos += w + 1 // size of ']'
-		case r != '?':
-			buf.WriteRune(r)
 		default:
-			return "", ErrArgumentMismatch
+			buf.WriteRune(r)
 		}
 	}
 
-	if curVal != maxVals {
+	if curVal != len(vals) {
 		return "", ErrArgumentMismatch
 	}
-
 	return buf.String(), nil
 }
 
