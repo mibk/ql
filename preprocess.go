@@ -10,6 +10,8 @@ import (
 	"unicode/utf8"
 )
 
+const sqlTimeFormat = "2006-01-02 15:04:05"
+
 // Need to turn \x00, \n, \r, \, ', " and \x1a.
 // Returns an escaped, quoted string. eg, "hello 'world'" -> "'hello \'world\''".
 func escapeAndQuoteString(val string) string {
@@ -169,7 +171,7 @@ func interpolate(w queryWriter, v interface{}) error {
 	case kindOfV == reflect.Struct:
 		if typeOfV := valueOfV.Type(); typeOfV == typeOfTime {
 			t := valueOfV.Interface().(time.Time)
-			w.WriteString(escapeAndQuoteString(t.UTC().Format(timeFormat)))
+			w.WriteString(escapeAndQuoteString(t.Format(sqlTimeFormat)))
 		} else {
 			return ErrInvalidValue
 		}
