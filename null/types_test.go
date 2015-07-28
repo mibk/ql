@@ -1,14 +1,80 @@
-package ql
+package null
 
 import (
 	"database/sql"
 	"encoding/json"
+	"log"
+	"os"
 	"testing"
 	"time"
 
 	"github.com/go-sql-driver/mysql"
+	"github.com/mibk/ql"
 	"github.com/stretchr/testify/assert"
 )
+
+type nullTypedRecord struct {
+	Id         int64
+	StringVal  String
+	Int64Val   Int64
+	Float64Val Float64
+	TimeVal    Time
+	BoolVal    Bool
+}
+
+func installFixtures(db *sql.DB) {
+	createNullTypesTable := `
+		CREATE TABLE null_types (
+			id int(11) DEFAULT NULL auto_increment PRIMARY KEY,
+			string_val varchar(255) NULL,
+			int64_val int(11) NULL,
+			float64_val float NULL,
+			time_val datetime NULL,
+			bool_val bool NULL
+		)
+	`
+
+	sqlToRun := []string{
+		"DROP TABLE IF EXISTS null_types",
+		createNullTypesTable,
+	}
+
+	for _, v := range sqlToRun {
+		_, err := db.Exec(v)
+		if err != nil {
+			log.Fatalln("Failed to execute statement: ", v, " Got error: ", err)
+		}
+	}
+}
+
+func createRealConnection() *ql.Connection {
+	return ql.NewConnection(realDb(), nil)
+}
+
+func createRealConnectionWithFixtures() *ql.Connection {
+	db := createRealConnection()
+	installFixtures(db.DB)
+	return db
+}
+
+func realDb() *sql.DB {
+	driver := os.Getenv("DBR_TEST_DRIVER")
+	if driver == "" {
+		driver = "mysql"
+	}
+
+	dsn := os.Getenv("DBR_TEST_DSN")
+	if dsn == "" {
+		dsn = "root@/ql_dev?charset=utf8&parseTime=true"
+	}
+
+	db, err := sql.Open(driver, dsn)
+	if err != nil {
+		log.Fatalln("Mysql error ", err)
+	}
+
+	return db
+}
 
 func TestNullTypeScanning(t *testing.T) {
 	s := createRealConnectionWithFixtures()
@@ -90,10 +156,10 @@ func TestNullTypeJSONMarshal(t *testing.T) {
 
 func newNullTypedRecordWithData() *nullTypedRecord {
 	return &nullTypedRecord{
-		StringVal:  NullString{sql.NullString{String: "wow", Valid: true}},
-		Int64Val:   NullInt64{sql.NullInt64{Int64: 42, Valid: true}},
-		Float64Val: NullFloat64{sql.NullFloat64{Float64: 1.618, Valid: true}},
-		TimeVal:    NullTime{mysql.NullTime{Time: time.Date(2009, 1, 3, 18, 15, 5, 0, time.UTC), Valid: true}},
-		BoolVal:    NullBool{sql.NullBool{Bool: true, Valid: true}},
+		StringVal:  String{sql.NullString{String: "wow", Valid: true}},
+		Int64Val:   Int64{sql.NullInt64{Int64: 42, Valid: true}},
+		Float64Val: Float64{sql.NullFloat64{Float64: 1.618, Valid: true}},
+		TimeVal:    Time{mysql.NullTime{Time: time.Date(2009, 1, 3, 18, 15, 5, 0, time.UTC), Valid: true}},
+		BoolVal:    Bool{sql.NullBool{Bool: true, Valid: true}},
 	}
 }
