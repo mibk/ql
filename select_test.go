@@ -96,7 +96,7 @@ func TestSelectPaginateOrderDirToSql(t *testing.T) {
 		Order(By{"id": Desc}).
 		ToSql()
 
-	assert.Equal(t, sql, "SELECT a, b FROM c WHERE (d = ?) ORDER BY [id] DESC LIMIT 20 OFFSET 0")
+	assert.Equal(t, sql, "SELECT a, b FROM c WHERE (d = ?) ORDER BY [id] DESC LIMIT 20")
 	assert.Equal(t, args, []interface{}{1})
 
 	sql, args = s.Select("a", "b").

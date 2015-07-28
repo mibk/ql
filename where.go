@@ -1,6 +1,10 @@
 package ql
 
-import "reflect"
+import (
+	"reflect"
+
+	"github.com/mibk/ql/query"
+)
 
 // Eq is a map column -> value pairs which must be matched in a query.
 type Eq map[string]interface{}
@@ -27,7 +31,7 @@ func newWhereFragment(whereSqlOrMap interface{}, args []interface{}) *whereFragm
 }
 
 // Invariant: only called when len(fragments) > 0.
-func writeWhereFragmentsToSql(fragments []*whereFragment, w queryWriter, args *[]interface{}) {
+func writeWhereFragmentsToSql(fragments []*whereFragment, w query.Writer, args *[]interface{}) {
 	anyConditions := false
 	for _, f := range fragments {
 		if f.Condition != "" {
@@ -50,7 +54,7 @@ func writeWhereFragmentsToSql(fragments []*whereFragment, w queryWriter, args *[
 	}
 }
 
-func writeEqualityMapToSql(eq map[string]interface{}, w queryWriter, args *[]interface{}, anyConditions bool) bool {
+func writeEqualityMapToSql(eq map[string]interface{}, w query.Writer, args *[]interface{}, anyConditions bool) bool {
 	for k, v := range eq {
 		if v == nil {
 			anyConditions = writeWhereCondition(w, k, " IS NULL", anyConditions)
@@ -86,14 +90,14 @@ func writeEqualityMapToSql(eq map[string]interface{}, w queryWriter, args *[]int
 	return anyConditions
 }
 
-func writeWhereCondition(w queryWriter, k string, pred string, anyConditions bool) bool {
+func writeWhereCondition(w query.Writer, k string, pred string, anyConditions bool) bool {
 	if anyConditions {
 		w.WriteString(" AND (")
 	} else {
 		w.WriteRune('(')
 		anyConditions = true
 	}
-	Quoter.writeQuotedColumn(k, w)
+	D.EscapeIdent(w, k)
 	w.WriteString(pred)
 	w.WriteRune(')')
 

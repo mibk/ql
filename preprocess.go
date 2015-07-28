@@ -8,40 +8,9 @@ import (
 	"strings"
 	"time"
 	"unicode/utf8"
+
+	"github.com/mibk/ql/query"
 )
-
-const sqlTimeFormat = "2006-01-02 15:04:05"
-
-// Need to turn \x00, \n, \r, \, ', " and \x1a.
-// Returns an escaped, quoted string. eg, "hello 'world'" -> "'hello \'world\''".
-func escapeAndQuoteString(val string) string {
-	buf := new(bytes.Buffer)
-
-	buf.WriteRune('\'')
-	for _, char := range val {
-		switch char {
-		case '\'':
-			buf.WriteString(`\'`)
-		case '"':
-			buf.WriteString(`\"`)
-		case '\\':
-			buf.WriteString(`\\`)
-		case '\n':
-			buf.WriteString(`\n`)
-		case '\r':
-			buf.WriteString(`\r`)
-		case 0:
-			buf.WriteString(`\x00`)
-		case 0x1a:
-			buf.WriteString(`\x1a`)
-		default:
-			buf.WriteRune(char)
-		}
-	}
-	buf.WriteRune('\'')
-
-	return buf.String()
-}
 
 func isUint(k reflect.Kind) bool {
 	return k == reflect.Uint || k == reflect.Uint8 || k == reflect.Uint16 || k == reflect.Uint32 ||
@@ -111,7 +80,7 @@ func Preprocess(sql string, vals []interface{}) (string, error) {
 		case r == '[':
 			w := strings.IndexRune(sql[pos:], ']')
 			col := sql[pos : pos+w]
-			Quoter.writeQuotedColumn(col, buf)
+			D.EscapeIdent(buf, col)
 			pos += w + 1 // size of ']'
 		default:
 			buf.WriteRune(r)
@@ -124,7 +93,7 @@ func Preprocess(sql string, vals []interface{}) (string, error) {
 	return buf.String(), nil
 }
 
-func interpolate(w queryWriter, v interface{}) error {
+func interpolate(w query.Writer, v interface{}) error {
 	valuer, ok := v.(driver.Valuer)
 	if ok {
 		val, err := valuer.Value()
@@ -154,24 +123,17 @@ func interpolate(w queryWriter, v interface{}) error {
 		if !utf8.ValidString(str) {
 			return ErrNotUTF8
 		}
-
-		w.WriteString(escapeAndQuoteString(str))
+		D.EscapeString(w, str)
 	case isFloat(kindOfV):
 		var fval = valueOfV.Float()
 
 		w.WriteString(strconv.FormatFloat(fval, 'f', -1, 64))
 	case kindOfV == reflect.Bool:
-		var bval = valueOfV.Bool()
-
-		if bval {
-			w.WriteRune('1')
-		} else {
-			w.WriteRune('0')
-		}
+		D.EscapeBool(w, valueOfV.Bool())
 	case kindOfV == reflect.Struct:
 		if typeOfV := valueOfV.Type(); typeOfV == typeOfTime {
 			t := valueOfV.Interface().(time.Time)
-			w.WriteString(escapeAndQuoteString(t.Format(sqlTimeFormat)))
+			D.EscapeTime(w, t)
 		} else {
 			return ErrInvalidValue
 		}
@@ -202,7 +164,9 @@ func interpolate(w queryWriter, v interface{}) error {
 				if !utf8.ValidString(str) {
 					return ErrNotUTF8
 				}
-				stringSlice = append(stringSlice, escapeAndQuoteString(str))
+				buf := new(bytes.Buffer)
+				D.EscapeString(buf, str)
+				stringSlice = append(stringSlice, buf.String())
 			}
 		default:
 			return ErrInvalidSliceValue

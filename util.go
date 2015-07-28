@@ -1,7 +1,5 @@
 package ql
 
-import "io"
-
 // NameMapping is the routine to use when mapping column names to struct properties
 var NameMapping = camelCaseToSnakeCase
 
@@ -22,11 +20,4 @@ func camelCaseToSnakeCase(name string) string {
 	}
 
 	return string(newstr)
-}
-
-// queryWriter is used to write a query.
-type queryWriter interface {
-	io.Writer
-	WriteString(s string) (n int, err error)
-	WriteRune(r rune) (n int, err error)
 }

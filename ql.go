@@ -2,6 +2,10 @@ package ql
 
 import (
 	"database/sql"
+	"time"
+
+	"github.com/mibk/ql/dialect"
+	"github.com/mibk/ql/query"
 )
 
 // Connection is a connection to the database with an EventReceiver to send events,
@@ -17,13 +21,17 @@ func NewConnection(db *sql.DB, log EventReceiver) *Connection {
 	if log == nil {
 		log = nullReceiver
 	}
-
 	return &Connection{DB: db, EventReceiver: log}
 }
 
 // Open opens a database by calling sql.Open. It returns new Connection with
 // nil EventReceiver.
 func Open(driverName, dataSourceName string) (*Connection, error) {
+	switch driverName {
+	case "mysql":
+	default:
+		panic("unsupported driver")
+	}
 	db, err := sql.Open(driverName, dataSourceName)
 	if err != nil {
 		return nil, err
@@ -63,4 +71,14 @@ func (c *Connection) Ping() error {
 type runner interface {
 	Exec(query string, args ...interface{}) (sql.Result, error)
 	Query(query string, args ...interface{}) (*sql.Rows, error)
+}
+
+var D Dialect = dialect.Mysql{}
+
+type Dialect interface {
+	EscapeIdent(w query.Writer, ident string)
+	EscapeBool(w query.Writer, b bool)
+	EscapeString(w query.Writer, s string)
+	EscapeTime(w query.Writer, t time.Time)
+	ApplyLimitAndOffset(w query.Writer, limit, offset uint64)
 }

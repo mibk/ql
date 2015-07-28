@@ -1,6 +1,6 @@
 package ql
 
-import "fmt"
+import "github.com/mibk/ql/query"
 
 type direction bool
 
@@ -54,14 +54,14 @@ func (b *baseBuilder) offset(v uint64) {
 	b.OffsetValid = true
 }
 
-func (b *baseBuilder) buildWhere(w queryWriter, args *[]interface{}) {
+func (b *baseBuilder) buildWhere(w query.Writer, args *[]interface{}) {
 	if len(b.WhereFragments) > 0 {
 		w.WriteString(" WHERE ")
 		writeWhereFragmentsToSql(b.WhereFragments, w, args)
 	}
 }
 
-func (b *baseBuilder) buildOrder(w queryWriter) {
+func (b *baseBuilder) buildOrder(w query.Writer) {
 	if len(b.OrderBys) > 0 {
 		w.WriteString(" ORDER BY ")
 		for i, s := range b.OrderBys {
@@ -73,13 +73,8 @@ func (b *baseBuilder) buildOrder(w queryWriter) {
 	}
 }
 
-func (b *baseBuilder) buildLimitAndOffset(w queryWriter) {
-	if b.LimitValid {
-		w.WriteString(" LIMIT ")
-		fmt.Fprint(w, b.LimitCount)
-	}
-	if b.OffsetValid {
-		w.WriteString(" OFFSET ")
-		fmt.Fprint(w, b.OffsetCount)
+func (b *baseBuilder) buildLimitAndOffset(w query.Writer) {
+	if b.LimitValid || b.OffsetValid {
+		D.ApplyLimitAndOffset(w, b.LimitCount, b.OffsetCount)
 	}
 }

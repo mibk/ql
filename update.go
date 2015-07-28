@@ -102,7 +102,7 @@ func (b *UpdateBuilder) ToSql() (string, []interface{}) {
 		if i > 0 {
 			sql.WriteString(", ")
 		}
-		Quoter.writeQuotedColumn(c.column, sql)
+		D.EscapeIdent(sql, c.column)
 		if e, ok := c.value.(*expr); ok {
 			sql.WriteString(" = ")
 			sql.WriteString(e.Sql)
