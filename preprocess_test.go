@@ -104,7 +104,6 @@ type myString struct {
 func (m myString) Value() (driver.Value, error) {
 	if m.Present {
 		return m.Val, nil
-	} else {
-		return nil, nil
 	}
+	return nil, nil
 }

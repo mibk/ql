@@ -15,14 +15,10 @@ func (db *Connection) Begin() (*Tx, error) {
 	tx, err := db.DB.Begin()
 	if err != nil {
 		return nil, db.EventErr("dbr.begin.error", err)
-	} else {
-		db.Event("dbr.begin")
 	}
+	db.Event("dbr.begin")
 
-	return &Tx{
-		Connection: db,
-		Tx:         tx,
-	}, nil
+	return &Tx{Connection: db, Tx: tx}, nil
 }
 
 // Commit finishes the transaction.
@@ -30,9 +26,8 @@ func (tx *Tx) Commit() error {
 	err := tx.Tx.Commit()
 	if err != nil {
 		return tx.EventErr("dbr.commit.error", err)
-	} else {
-		tx.Event("dbr.commit")
 	}
+	tx.Event("dbr.commit")
 	return nil
 }
 
@@ -41,9 +36,8 @@ func (tx *Tx) Rollback() error {
 	err := tx.Tx.Rollback()
 	if err != nil {
 		return tx.EventErr("dbr.rollback", err)
-	} else {
-		tx.Event("dbr.rollback")
 	}
+	tx.Event("dbr.rollback")
 	return nil
 }
 
