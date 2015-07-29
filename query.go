@@ -1,5 +1,6 @@
 package ql
 
+// Query represent an arbitrary SQL statement.
 type Query struct {
 	loader // methods for loading structs and values
 	executor
@@ -25,6 +26,7 @@ func (db *Connection) Query(sql string, args ...interface{}) *Query {
 	return newQuery(db, db.DB, sql, args...)
 }
 
+// Query creates Query by the raw SQL query and args. Query is bound to the transaction.
 func (tx *Tx) Query(sql string, args ...interface{}) *Query {
 	return newQuery(tx.Connection, tx.Tx, sql, args...)
 }

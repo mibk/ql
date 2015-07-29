@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"time"
 
-	_ "github.com/go-sql-driver/mysql"
 	"github.com/mibk/ql/dialect"
 	"github.com/mibk/ql/query"
 )
@@ -76,6 +75,8 @@ type runner interface {
 
 var D Dialect = dialect.Mysql{}
 
+// Dialect is an interface that wraps the diverse properties of individual
+// SQL drivers.
 type Dialect interface {
 	EscapeIdent(w query.Writer, ident string)
 	EscapeBool(w query.Writer, b bool)

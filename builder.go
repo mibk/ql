@@ -4,6 +4,8 @@ import "github.com/mibk/ql/query"
 
 type direction bool
 
+// These constant are used to indicate a direction of an ORDER clause. They
+// are used as a value in the column/direction map in Order method.
 const (
 	Asc  direction = false
 	Desc direction = true
