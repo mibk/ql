@@ -33,7 +33,7 @@ by SELECT statement (will be explained later).
 `SelectBuilder` and `Query` have new methods for loading values: `All` and `One`. They replace old methods
 for loading (`LoadStructs`, `LoadStruct`, `LoadValues`, `LoadValue`). `All` handles pointer to a slice of
 pointers to an arbitrary value (primitive value, or a struct), and `One` works likewise for just one pointer
-to an aarbitrary value.
+to an arbitrary value.
 
 Methods for quick returning returning primitive types (`ReturnInt64`, `ReturnStrings`, ...) were remained.
 
@@ -88,7 +88,6 @@ type Nonsence struct {
 package main
 
 import (
-	"database/sql"
 	"fmt"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -110,16 +109,16 @@ func main() {
 	conn = ql.MustOpenAndVerify("mysql", "root@/your_database")
 
 	var u User
-	b := conn.Select("id, [title]").From("suggestions").Where("id = ?", 13)
+	b := conn.Select("id, [title]").From("user").Where("id = ?", 13)
 
 	// This will print the interpolated query:
-	//     SELECT id, `title` FROM suggestions WHERE id = 13
+	//     SELECT id, `title` FROM user WHERE (id = 13)
 	fmt.Println(b)
 
 	// Method One will execute the query and load the result to the u struct.
 	// If it was not set before, it also sets LIMIT to 1 as there is no need
 	// for returning multiple rows.
-	//     SELECT id, `title` FROM suggestions WHERE id = 13 LIMIT 1
+	//     SELECT id, `title` FROM user WHERE (id = 13) LIMIT 1
 	if err := b.One(&u); err != nil {
 		panic(err)
 	}
