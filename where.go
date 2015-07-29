@@ -26,8 +26,6 @@ func newWhereFragment(whereSqlOrMap interface{}, args []interface{}) *whereFragm
 	default:
 		panic("Invalid argument passed to Where. Pass a string or an Eq map.")
 	}
-
-	return nil
 }
 
 // Invariant: only called when len(fragments) > 0.
