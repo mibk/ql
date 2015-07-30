@@ -26,8 +26,11 @@ type baseBuilder struct {
 	OffsetValid    bool
 }
 
-func (b *baseBuilder) where(whereSqlOrMap interface{}, args ...interface{}) {
-	b.WhereFragments = append(b.WhereFragments, newWhereFragment(whereSqlOrMap, args))
+func (b *baseBuilder) where(exprOrMap interface{}, args ...interface{}) {
+	handleExprType(exprOrMap, args, func(expr string, args ...interface{}) {
+		expr, args = handleShortNotation(expr, args)
+		b.WhereFragments = append(b.WhereFragments, &whereFragment{expr, args})
+	})
 }
 
 func (b *baseBuilder) orderBy(expr string) {
@@ -59,7 +62,7 @@ func (b *baseBuilder) offset(v uint64) {
 func (b *baseBuilder) buildWhere(w query.Writer, args *[]interface{}) {
 	if len(b.WhereFragments) > 0 {
 		w.WriteString(" WHERE ")
-		writeWhereFragmentsToSql(b.WhereFragments, w, args)
+		writeWhereFragmentsToSql(w, b.WhereFragments, args)
 	}
 }
 

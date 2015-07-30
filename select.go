@@ -61,8 +61,11 @@ func (b *SelectBuilder) GroupBy(group string) *SelectBuilder {
 }
 
 // Having appends a HAVING clause to the statement.
-func (b *SelectBuilder) Having(whereSqlOrMap interface{}, args ...interface{}) *SelectBuilder {
-	b.HavingFragments = append(b.HavingFragments, newWhereFragment(whereSqlOrMap, args))
+func (b *SelectBuilder) Having(exprOrMap interface{}, args ...interface{}) *SelectBuilder {
+	handleExprType(exprOrMap, args, func(expr string, args ...interface{}) {
+		expr, args = handleShortNotation(expr, args)
+		b.HavingFragments = append(b.HavingFragments, &whereFragment{expr, args})
+	})
 	return b
 }
 
@@ -133,7 +136,7 @@ func (b *SelectBuilder) ToSql() (string, []interface{}) {
 
 	if len(b.HavingFragments) > 0 {
 		sql.WriteString(" HAVING ")
-		writeWhereFragmentsToSql(b.HavingFragments, sql, &args)
+		writeWhereFragmentsToSql(sql, b.HavingFragments, &args)
 	}
 
 	b.buildOrder(sql)

@@ -40,7 +40,7 @@ func TestUpdateSingleToSql(t *testing.T) {
 
 	sql, args := s.Update("a").Set("b", 1).Set("c", 2).Where("id = ?", 1).ToSql()
 
-	assert.Equal(t, sql, "UPDATE a SET `b` = ?, `c` = ? WHERE (id = ?)")
+	assert.Equal(t, sql, "UPDATE a SET `b` = ?, `c` = ? WHERE ([id] = ?)")
 	assert.Equal(t, args, []interface{}{1, 2, 1})
 }
 
@@ -49,10 +49,10 @@ func TestUpdateSetMapToSql(t *testing.T) {
 
 	sql, args := s.Update("a").SetMap(map[string]interface{}{"b": 1, "c": 2}).Where("id = ?", 1).ToSql()
 
-	if sql == "UPDATE a SET `b` = ?, `c` = ? WHERE (id = ?)" {
+	if sql == "UPDATE a SET `b` = ?, `c` = ? WHERE ([id] = ?)" {
 		assert.Equal(t, args, []interface{}{1, 2, 1})
 	} else {
-		assert.Equal(t, sql, "UPDATE a SET `c` = ?, `b` = ? WHERE (id = ?)")
+		assert.Equal(t, sql, "UPDATE a SET `c` = ?, `b` = ? WHERE ([id] = ?)")
 		assert.Equal(t, args, []interface{}{2, 1, 1})
 	}
 }
@@ -62,12 +62,12 @@ func TestUpdateSetExprToSql(t *testing.T) {
 
 	sql, args := s.Update("a").Set("foo", 1).Set("bar", Expr("COALESCE(bar, 0) + 1")).Where("id = ?", 9).ToSql()
 
-	assert.Equal(t, sql, "UPDATE a SET `foo` = ?, `bar` = COALESCE(bar, 0) + 1 WHERE (id = ?)")
+	assert.Equal(t, sql, "UPDATE a SET `foo` = ?, `bar` = COALESCE(bar, 0) + 1 WHERE ([id] = ?)")
 	assert.Equal(t, args, []interface{}{1, 9})
 
 	sql, args = s.Update("a").Set("foo", 1).Set("bar", Expr("COALESCE(bar, 0) + ?", 2)).Where("id = ?", 9).ToSql()
 
-	assert.Equal(t, sql, "UPDATE a SET `foo` = ?, `bar` = COALESCE(bar, 0) + ? WHERE (id = ?)")
+	assert.Equal(t, sql, "UPDATE a SET `foo` = ?, `bar` = COALESCE(bar, 0) + ? WHERE ([id] = ?)")
 	assert.Equal(t, args, []interface{}{1, 2, 9})
 }
 
@@ -88,16 +88,16 @@ func TestUpdateKeywordColumnName(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Update the key
-	res, err = s.Update("dbr_people").Set("key", "6-revoked").Where(Eq{"key": "6"}).Exec()
-	assert.NoError(t, err)
-
-	// Assert our record was updated (and only our record)
-	rowsAff, err := res.RowsAffected()
-	assert.NoError(t, err)
-	assert.Equal(t, rowsAff, int64(1))
+	res, err = s.Update("dbr_people").Set("key", "6-revoked").Where(And{"key": "6"}).Exec()
+	if assert.NoError(t, err) {
+		// Assert our record was updated (and only our record)
+		rowsAff, err := res.RowsAffected()
+		assert.NoError(t, err)
+		assert.Equal(t, rowsAff, int64(1))
+	}
 
 	var person dbrPerson
-	err = s.Select("*").From("dbr_people").Where(Eq{"email": "ben@whitehouse.gov"}).One(&person)
+	err = s.Select("*").From("dbr_people").Where(And{"email": "ben@whitehouse.gov"}).One(&person)
 	assert.NoError(t, err)
 
 	assert.Equal(t, person.Name, "Benjamin")

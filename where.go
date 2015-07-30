@@ -2,102 +2,88 @@ package ql
 
 import (
 	"reflect"
+	"regexp"
 
 	"github.com/mibk/ql/query"
 )
 
-// Eq is a map column -> value pairs which must be matched in a query.
-type Eq map[string]interface{}
+// And is a map column -> value pairs which must be matched in a query.
+type And map[string]interface{}
 
 type whereFragment struct {
-	Condition   string
-	Values      []interface{}
-	EqualityMap map[string]interface{}
+	Condition string
+	Values    []interface{}
 }
 
-func newWhereFragment(whereSqlOrMap interface{}, args []interface{}) *whereFragment {
-	switch pred := whereSqlOrMap.(type) {
+type addFragmentFn func(expr string, args ...interface{})
+
+func handleExprType(exprOrMap interface{}, args []interface{}, fn addFragmentFn) {
+	switch v := exprOrMap.(type) {
 	case string:
-		return &whereFragment{Condition: pred, Values: args}
-	case map[string]interface{}:
-		return &whereFragment{EqualityMap: pred}
-	case Eq:
-		return &whereFragment{EqualityMap: map[string]interface{}(pred)}
+		fn(v, args...)
+	case And:
+		if len(args) > 0 {
+			panic("args are not expected when passing an And map")
+		}
+		for ex, arg := range v {
+			fn(ex, arg)
+		}
 	default:
-		panic("Invalid argument passed to Where. Pass a string or an Eq map.")
+		panic("invalid argument passed to Where, only a string or an And map is allowed")
 	}
+}
+
+var shortNotation = regexp.MustCompile(`^\s*([a-zA-Z._]+)\s*([a-zA-Z=<>!]+)?\s*\??\s*$`)
+
+func handleShortNotation(expr string, args []interface{}) (string, []interface{}) {
+	if len(args) == 1 {
+		if m := shortNotation.FindStringSubmatch(expr); m != nil {
+			col, op := m[1], m[2]
+			if op == "" {
+				op = "="
+			}
+			expr = "[" + col + "]"
+
+			arg := args[0]
+			if arg == nil {
+				expr += " IS NULL"
+				args = args[:0]
+			} else {
+				v := reflect.ValueOf(arg)
+				if v.Kind() == reflect.Array || v.Kind() == reflect.Slice {
+					if v.Len() == 0 {
+						if v.IsNil() {
+							expr += " IS NULL"
+						} else {
+							expr = "1=0"
+						}
+						args = args[:0]
+					} else {
+						expr += " IN ?"
+					}
+				} else {
+					expr += " " + op + " ?"
+				}
+			}
+		}
+	}
+	return expr, args
 }
 
 // Invariant: only called when len(fragments) > 0.
-func writeWhereFragmentsToSql(fragments []*whereFragment, w query.Writer, args *[]interface{}) {
+func writeWhereFragmentsToSql(w query.Writer, fragments []*whereFragment, args *[]interface{}) {
 	anyConditions := false
 	for _, f := range fragments {
-		if f.Condition != "" {
-			if anyConditions {
-				w.WriteString(" AND (")
-			} else {
-				w.WriteRune('(')
-				anyConditions = true
-			}
-			w.WriteString(f.Condition)
-			w.WriteRune(')')
-			if len(f.Values) > 0 {
-				*args = append(*args, f.Values...)
-			}
-		} else if f.EqualityMap != nil {
-			anyConditions = writeEqualityMapToSql(f.EqualityMap, w, args, anyConditions)
-		} else {
-			panic("invalid equality map")
+		if f.Condition == "" {
+			panic("invalid condition expression")
 		}
-	}
-}
-
-func writeEqualityMapToSql(eq map[string]interface{}, w query.Writer, args *[]interface{}, anyConditions bool) bool {
-	for k, v := range eq {
-		if v == nil {
-			anyConditions = writeWhereCondition(w, k, " IS NULL", anyConditions)
-		} else {
-			vVal := reflect.ValueOf(v)
-
-			if vVal.Kind() == reflect.Array || vVal.Kind() == reflect.Slice {
-				vValLen := vVal.Len()
-				if vValLen == 0 {
-					if vVal.IsNil() {
-						anyConditions = writeWhereCondition(w, k, " IS NULL", anyConditions)
-					} else {
-						if anyConditions {
-							w.WriteString(" AND (1=0)")
-						} else {
-							w.WriteString("(1=0)")
-						}
-					}
-				} else if vValLen == 1 {
-					anyConditions = writeWhereCondition(w, k, " = ?", anyConditions)
-					*args = append(*args, vVal.Index(0).Interface())
-				} else {
-					anyConditions = writeWhereCondition(w, k, " IN ?", anyConditions)
-					*args = append(*args, v)
-				}
-			} else {
-				anyConditions = writeWhereCondition(w, k, " = ?", anyConditions)
-				*args = append(*args, v)
-			}
+		if anyConditions {
+			w.WriteString(" AND ")
 		}
-	}
-
-	return anyConditions
-}
-
-func writeWhereCondition(w query.Writer, k string, pred string, anyConditions bool) bool {
-	if anyConditions {
-		w.WriteString(" AND (")
-	} else {
-		w.WriteRune('(')
 		anyConditions = true
+		w.WriteString("(" + f.Condition + ")")
+		if len(f.Values) > 0 {
+			*args = append(*args, f.Values...)
+		}
 	}
-	D.EscapeIdent(w, k)
-	w.WriteString(pred)
-	w.WriteRune(')')
-
-	return anyConditions
 }

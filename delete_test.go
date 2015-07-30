@@ -29,7 +29,7 @@ func TestDeleteSingleToSql(t *testing.T) {
 
 	sql, args := s.DeleteFrom("a").Where("id = ?", 1).ToSql()
 
-	assert.Equal(t, sql, "DELETE FROM a WHERE (id = ?)")
+	assert.Equal(t, sql, "DELETE FROM a WHERE ([id] = ?)")
 	assert.Equal(t, args, []interface{}{1})
 }
 
