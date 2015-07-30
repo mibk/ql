@@ -76,10 +76,41 @@ type Nonsence struct {
 }
 ```
 
-### Removed objects
+### Updated `Where` (and `Having`) method
 
+`Where` now accepts only string or `ql.And` type as the first argument. `ql.And` is the replacement for
+the original `Eq` type. It's because `ql.And` goes beyond an equality map. When an ql.And map is the
+input, it is only a shorthand for calling the `Where` (`Having`) method multiple times with 2 arguments:
+an expression string and one parameter. Example:
+
+```go
+b.Where(ql.And{"name": "Igor", "age >": 50})
+// is equivalent to:
+b.Where("name", "Igor")
+b.Where("age >", 50)
+```
+
+As you can see in these simple examples it is not required to type an operator, or a placeholder. That
+is so called "short notation" of the format:
+```
+column_name [operator] [?]
+```
+Default operator is `=` and typing a placeholder is just optional. If the expression doesn't match
+this format, it works as before.
+
+### Order method
+
+`OrderBy` methods works as before, but there is new method `Order` which replaces the `OrderDir`.
+It expects the `ql.By` type as a parameter which is a map of column names and order directions.
+Example:
+
+```go
+b.Order(ql.By{"col1:": ql.Asc, "col2:": ql.Desc})
+// ORDER BY `col1` ASC, `col2` DESC
+```
+
+### Removed objects
 * `Paginate` on `*SelectBuilder` was removed. It should probably be in another layer.
-* `OrderDir` was removed. There is `builder.Order(ql.By{"col1:": ql.Asc, "col2:": ql.Desc})` instead.
 * No `NullTime` as it was dependent on the *mysql driver*.
 
 ## Quickstart
