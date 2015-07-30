@@ -1,7 +1,7 @@
 # ql [![GoDoc](https://godoc.org/github.com/mibk/ql?status.png)](https://godoc.org/github.com/mibk/ql)
 
-This is a fork of the wonderful [gocraft/dbr](https://github.com/gocraft/dbr). I have made some changes to the
-package interface to better fit my needs. Before you look at this README be sure to have read the
+This is a fork of the wonderful [gocraft/dbr](https://github.com/gocraft/dbr). I have made some changes
+to the package interface to better fit my needs. Before you look at this README be sure to have read the
 [original README](https://github.com/gocraft/dbr) for **gocraft/dbr**.
 
 ## Instalation
@@ -14,33 +14,35 @@ go get github.com/mibk/ql
 
 ### No Session
 
-All methods are available directly on `*ql.Connection`, there is no need to do `conn.NewSession(nil)`. I've found
-it not necessary as the `*dbr.Session` is  only a wrapper around `*dbr.Connection` whitch enables setting a
-different `EventReceiver`. If it is so, I would suggest a different approach for setting different `EventReceiver`
+All methods are available directly on `*ql.Connection`, there is no need to do `conn.NewSession(nil)`.
+I've found it not necessary as the `*dbr.Session` is  only a wrapper around `*dbr.Connection` whitch
+enables setting a different `EventReceiver`. If it is so, I would suggest a different approach for
+setting different `EventReceiver`
 (currently not provided).
 
 ### Query
 
-There is only `Query` method indstead of `SelectBySql` and `UpdateBySql`. For me, they were 2 methods doing the same
-thing. `Query` is a superior of these 2. It handles arbitrary SQL statements (not only SELECT and UPDATE, although
-the previous 2 were actualy capable of it).
+There is only `Query` method indstead of `SelectBySql` and `UpdateBySql`. For me, they were 2 methods
+doing the same thing. `Query` is a superior of these 2. It handles arbitrary SQL statements (not only
+SELECT and UPDATE, although the previous 2 were actualy capable of it).
 
-There is `Exec` method for running INSERT, UPDATE, DELETE, ..., and there are methods for loading values returned
-by SELECT statement (will be explained later).
+There is `Exec` method for running INSERT, UPDATE, DELETE, ..., and there are methods for loading
+values returned by SELECT statement (will be explained later).
 
 ### All and One methods
 
-`SelectBuilder` and `Query` have new methods for loading values: `All` and `One`. They replace old methods
-for loading (`LoadStructs`, `LoadStruct`, `LoadValues`, `LoadValue`). `All` handles pointer to a slice of
-pointers to an arbitrary value (primitive value, or a struct), and `One` works likewise for just one pointer
-to an arbitrary value.
+`SelectBuilder` and `Query` have new methods for loading values: `All` and `One`. They replace old
+methods for loading (`LoadStructs`, `LoadStruct`, `LoadValues`, `LoadValue`). `All` handles pointer
+to a slice of pointers to an arbitrary value (primitive value, or a struct), and `One` works likewise
+for just one pointer to an arbitrary value.
 
-Methods for quick returning returning primitive types (`ReturnInt64`, `ReturnStrings`, ...) were remained.
+Methods for quick returning returning primitive types (`ReturnInt64`, `ReturnStrings`, ...) were
+remained.
 
 ### String methods
 
-For all builders and `Query` there is the String method, which returns an interpolated (and preprocessed) SQL
-statement. Useful for debugging (it is possible to just `fmt.Println` a builder).
+For all builders and `Query` there is the String method, which returns an interpolated (and
+preprocessed) SQL statement. Useful for debugging (it is possible to just `fmt.Println` a builder).
 
 ### Functions for opening DB
 
@@ -60,8 +62,8 @@ db.Query(`SELECT [name], [age], [from] AS [birth_place]
 // SELECT `name`, `age`, `from` AS `birth_place` FROM `user` WHERE `id` = 15
 ```
 
-I have found it convenient to write SQL statements on multiple lines for readability reasons. But that is only
-possible using *backticks* that are also used for column escaping.
+I have found it convenient to write SQL statements on multiple lines for readability reasons. But that
+is only possible using *backticks* that are also used for column escaping.
 
 ### Null types in `null` package
 
@@ -135,8 +137,8 @@ type User struct {
 var conn *ql.Connection
 
 func main() {
-	// It panics on error and after successful opening it tries to ping the database to
-	// test the connection.
+	// It panics on error and after successful opening it tries to ping the database
+	// to test the connection.
 	conn = ql.MustOpenAndVerify("mysql", "root@/your_database")
 
 	var u User
@@ -159,7 +161,8 @@ func main() {
 
 ## Driver support
 
-Currently only MySQL is supported. I am planning to move all driver dependent parts to `gl/dialect` package.
+Currently only MySQL is supported. I am planning to move all driver dependent parts to `gl/dialect`
+package.
 
 ## Authors:
 
@@ -167,7 +170,3 @@ Currently only MySQL is supported. I am planning to move all driver dependent pa
 * Tyler Smith ([github](https://github.com/tyler-smith))
 * Michal Bohuslávek ([github](https://github.com/mibk))
 * Sponsored by [UserVoice](https://eng.uservoice.com)
-
-
-
-
