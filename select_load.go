@@ -35,19 +35,14 @@ func (l loader) All(dest interface{}) (n int, err error) {
 	originType := valOfIndirect.Type().Elem()
 	elemType := originType
 
-	canBeStruct := true
-	if originType.Kind() != reflect.Ptr {
-		canBeStruct = false
-	} else {
+	isPtr := false
+	if isPtr = originType.Kind() == reflect.Ptr; isPtr {
 		elemType = originType.Elem()
 	}
 
 	switch elemType.Kind() {
 	case reflect.Struct:
-		if !canBeStruct {
-			panic("elements of the dest slice must be pointers to structs")
-		}
-		return l.loadStructs(dest, valOfIndirect, elemType)
+		return l.loadStructs(dest, valOfIndirect, elemType, isPtr)
 	default:
 		return l.loadValues(dest, valOfIndirect, originType)
 	}
@@ -74,7 +69,7 @@ func (l loader) One(dest interface{}) error {
 // loadStructs executes the query and loads the resulting data into a slice of structs,
 // dest must be a pointer to a slice of pointers to structs. It returns the number of items
 // found (which is not necessarily the number of items set).
-func (l loader) loadStructs(dest interface{}, valueOfDest reflect.Value, elemType reflect.Type) (int, error) {
+func (l loader) loadStructs(dest interface{}, valueOfDest reflect.Value, elemType reflect.Type, isPtr bool) (int, error) {
 	fullSql, err := Preprocess(l.builder.ToSql())
 	if err != nil {
 		return 0, l.EventErr("dbr.select.load_all.interpolate", err)
@@ -124,7 +119,11 @@ func (l loader) loadStructs(dest interface{}, valueOfDest reflect.Value, elemTyp
 		}
 
 		// Append our new record to the slice:
-		sliceValue = reflect.Append(sliceValue, pointerToNewRecord)
+		if isPtr {
+			sliceValue = reflect.Append(sliceValue, pointerToNewRecord)
+		} else {
+			sliceValue = reflect.Append(sliceValue, newRecord)
+		}
 
 		numberOfRowsReturned++
 	}
