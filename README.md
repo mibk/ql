@@ -4,6 +4,11 @@ This is a fork of the wonderful [gocraft/dbr](https://github.com/gocraft/dbr). I
 to the package interface to better fit my needs. Before you look at this README be sure to have read the
 [original README](https://github.com/gocraft/dbr) for **gocraft/dbr**.
 
+## Deprecated
+
+This package is deprecated. The design has been reworked from the ground up in
+[mibk/dali](https://github.com/mibk/dali).
+
 ## Instalation
 
 ```bash
